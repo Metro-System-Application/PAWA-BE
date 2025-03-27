@@ -8,7 +8,5 @@ import java.util.List;
 
 @Repository
 public interface PassengerRepository extends CrudRepository<Passenger, String> {
-    List<Passenger> findPasssengerByPassengerEmail(String passengerEmail);
-    Passenger findById(long id);
-    void deleteById(long id);
+
 }
