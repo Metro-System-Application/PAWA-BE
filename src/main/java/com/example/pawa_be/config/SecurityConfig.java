@@ -20,9 +20,11 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-//                .csrf(Customizer.withDefaults())
+                .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(
-                request -> request.anyRequest().authenticated()
+                request -> request
+                        .requestMatchers("/register").permitAll()
+                        .anyRequest().authenticated()
                 )
                 .formLogin(Customizer.withDefaults())
                 .httpBasic(Customizer.withDefaults())
@@ -30,17 +32,17 @@ public class SecurityConfig {
         return http.build();
     }
 
-//    @Bean
-//    public PasswordEncoder passwordEncoder(){
-//        return new BCryptPasswordEncoder();
-//    }
+    @Bean
+    public PasswordEncoder passwordEncoder(){
+        return new BCryptPasswordEncoder();
+    }
 
     @Bean
-    public UserDetailsService userDetailsService(){
-        UserDetails test1 = User.withUsername("test1").password("{noop}password").roles("USER").build();
-        UserDetails test2 = User.withUsername("test2").password("{noop}password").roles("USER").build();
-        UserDetails test3 = User.withUsername("test3").password("{noop}password").roles("USER").build();
-        UserDetails test4 = User.withUsername("test4").password("{noop}password").roles("USER").build();
+    public UserDetailsService userDetailsService(PasswordEncoder passwordEncoder){
+        UserDetails test1 = User.withUsername("test1").password(passwordEncoder.encode("password")).roles("USER").build();
+        UserDetails test2 = User.withUsername("test2").password(passwordEncoder.encode("password")).roles("USER").build();
+        UserDetails test3 = User.withUsername("test3").password(passwordEncoder.encode("password")).roles("USER").build();
+        UserDetails test4 = User.withUsername("test4").password(passwordEncoder.encode("password")).roles("USER").build();
         return new InMemoryUserDetailsManager(test1, test2, test3, test4);
     }
 }

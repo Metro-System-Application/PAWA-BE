@@ -1,18 +1,21 @@
 package com.example.pawa_be.model;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.RequiredArgsConstructor;
+import lombok.Setter;
 
+@Setter
+@Getter
+@AllArgsConstructor
+@NoArgsConstructor
 @Entity
 @Table(name = "user_auth")
-@NoArgsConstructor
-@AllArgsConstructor
 public class UserAuth {
     @Id
+    private Long id;
     private String password;
     private String email;
+
 }
