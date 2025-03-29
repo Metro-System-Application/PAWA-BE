@@ -20,5 +20,12 @@ public class UserAuthService {
         return userAuthRepository.save(userAuth);
     }
 
+    public UserAuth findUserAuthByEmail(String email){
+        return userAuthRepository.findByEmail(email);
+    }
 
+    public boolean validatePassword(String email, String rawPassword){
+        UserAuth userAuth = userAuthRepository.findByEmail(email);
+        return userAuth != null && passwordEncoder.matches(rawPassword, userAuth.getPassword());
+    }
 }
