@@ -23,20 +23,13 @@ public class UserAuthController {
     }
 
     @PostMapping("/register")
-    public UserAuth registerNewUser(@RequestBody UserAuth user) throws Exception {
-        if (Objects.isNull(userAuthService.findUserAuthByEmail(user.getEmail()))){
-            return userAuthService.registerUser(user);
-        }
-        throw new Exception("User already exist!");
+    public UserAuth register(@RequestBody UserAuth user) throws Exception {
+        return userAuthService.registerNewUser(user);
     }
 
     @PostMapping("/login")
     public String loginWithEmail(@RequestBody UserAuth userAuthInstance){
-        if (userAuthService.validatePassword(userAuthInstance.getEmail(), userAuthInstance.getPassword())) {
-            return "Success!";
-        } else {
-            return "Invalid credentials!";
-        }
+        return userAuthService.loginUserWithEmail(userAuthInstance);
     }
 
 
