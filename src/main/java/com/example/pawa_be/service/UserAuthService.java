@@ -24,13 +24,7 @@ public class UserAuthService {
     @Autowired
     private JWTService jwtService;
 
-
-    public UserAuth registerUser(UserAuth userAuth){
-        userAuth.setPassword(passwordEncoder.encode(userAuth.getPassword()));
-        return userAuthRepository.save(userAuth);
-    }
-
-    public UserAuth findUserAuthByEmail(String email){
+    public UserAuth findUserAuthByEmail(String email) {
         return userAuthRepository.findByEmail(email);
     }
 
@@ -55,6 +49,7 @@ public class UserAuthService {
 
     public UserAuth registerNewUser(UserAuth userAuthInstance){
         if (userAuthRepository.findByEmail(userAuthInstance.getEmail()) == null) {
+            userAuthInstance.setPassword(passwordEncoder.encode(userAuthInstance.getPassword()));
             return userAuthRepository.save(userAuthInstance);
         } else {
             throw new RuntimeException("User already exists!");
