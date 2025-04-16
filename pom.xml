@@ -8,9 +8,10 @@
         <version>3.4.4</version>
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
-    <groupId>com.example</groupId>
+    <groupId>pawa_be</groupId>
     <artifactId>PAWA_BE</artifactId>
     <version>0.0.1-SNAPSHOT</version>
+    <packaging>pom</packaging>
     <name>PAWA_BE</name>
     <description>PAWA_BE</description>
     <url/>
@@ -20,6 +21,11 @@
     <developers>
         <developer/>
     </developers>
+    <modules>
+        <module>infrastructure</module>
+        <module>application</module>
+        <module>modules</module>
+    </modules>
     <scm>
         <connection/>
         <developerConnection/>
@@ -27,7 +33,7 @@
         <url/>
     </scm>
     <properties>
-        <java.version>24</java.version>
+        <java.version>23</java.version>
     </properties>
     <dependencies>
         <dependency>
