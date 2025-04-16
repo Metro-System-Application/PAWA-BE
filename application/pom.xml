@@ -12,6 +12,14 @@
     <groupId>pawa_be.application</groupId>
     <artifactId>application</artifactId>
 
+    <dependencies>
+        <dependency>
+            <groupId>pawa_be.profile</groupId>
+            <artifactId>profile</artifactId>
+            <version>0.0.1-SNAPSHOT</version>
+        </dependency>
+    </dependencies>
+
     <properties>
         <maven.compiler.source>23</maven.compiler.source>
         <maven.compiler.target>23</maven.compiler.target>
