@@ -11,11 +11,22 @@
 
     <groupId>pawa_be.application</groupId>
     <artifactId>application</artifactId>
+    <packaging>jar</packaging>
 
     <dependencies>
         <dependency>
             <groupId>pawa_be.profile</groupId>
             <artifactId>profile</artifactId>
+            <version>0.0.1-SNAPSHOT</version>
+        </dependency>
+        <dependency>
+            <groupId>pawa_be.infrastructure.jwt</groupId>
+            <artifactId>jwt</artifactId>
+            <version>0.0.1-SNAPSHOT</version>
+        </dependency>
+        <dependency>
+            <groupId>pawa_be.user_auth</groupId>
+            <artifactId>user_auth</artifactId>
             <version>0.0.1-SNAPSHOT</version>
         </dependency>
     </dependencies>
