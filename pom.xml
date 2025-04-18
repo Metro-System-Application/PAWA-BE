@@ -26,6 +26,8 @@
         <module>application</module>
         <module>modules</module>
         <module>modules/EWallet</module>
+        <module>modules/Images</module>
+        <module>modules/TopUpTransaction</module>
     </modules>
     <scm>
         <connection/>
