@@ -30,6 +30,7 @@
         <module>modules/TopUpTransaction</module>
         <module>modules/Cart</module>
         <module>modules/Invoice</module>
+        <module>modules/InvoiceItem</module>
     </modules>
     <scm>
         <connection/>
