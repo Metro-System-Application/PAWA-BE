@@ -5,6 +5,8 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 import pawa_be.profile.internal.model.Passenger;
 
 import java.math.BigDecimal;
@@ -32,6 +34,10 @@ public class InvoiceModel {
     @Column(nullable = false)
     private BigDecimal totalPrice;
 
+    @CreationTimestamp
+    @Column(updatable = false)
     private LocalDateTime createdAt;
+
+    @UpdateTimestamp
     private LocalDateTime purchasedAt;
 }
