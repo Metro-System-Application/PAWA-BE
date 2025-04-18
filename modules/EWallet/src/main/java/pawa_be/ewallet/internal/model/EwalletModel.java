@@ -21,6 +21,7 @@ public class EwalletModel {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID walletID;
 
+    @Column(nullable = false)
     private BigDecimal balance;
 
     @OneToOne

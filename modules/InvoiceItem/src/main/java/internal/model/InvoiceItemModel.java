@@ -26,19 +26,29 @@ public class InvoiceItemModel {
     @JoinColumn(name="invoice_id", referencedColumnName = "invoiceID", nullable = false)
     private InvoiceModel invoiceModel;
 
+    @Column(nullable = false)
     private String ticketName;
+
+    @Column(nullable = false)
     private String ticketType;
+
+    @Column(nullable = false)
     private BigDecimal price;
 
     private LocalDateTime activatedAt;
     private LocalDateTime expiredAt;
 
+    @Column(nullable = false)
     private UUID lineID;
+
+    @Column(nullable = false)
     private String lineName;
+
 
     private String startStation;
     private String endStation;
 
+    @Column(nullable = false)
     private int duration;
 
     private LocalDateTime createdAt;

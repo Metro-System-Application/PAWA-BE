@@ -21,6 +21,7 @@ public class TopUpTransactionModel {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID transactionID;
 
+    @Column(nullable = false)
     private BigDecimal amount;
 
     @ManyToOne

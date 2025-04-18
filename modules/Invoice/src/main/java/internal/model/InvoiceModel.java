@@ -26,8 +26,12 @@ public class InvoiceModel {
     @JoinColumn(name="passenger_id", referencedColumnName = "passengerID", nullable = false)
     private Passenger passenger;
 
+    @Column(nullable = false)
     private String email;
+
+    @Column(nullable = false)
     private BigDecimal totalPrice;
+
     private LocalDateTime createdAt;
     private LocalDateTime purchasedAt;
 }

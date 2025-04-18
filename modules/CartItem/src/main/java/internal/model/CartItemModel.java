@@ -20,8 +20,13 @@ public class CartItemModel {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID cartItemID;
 
+    @Column(nullable = false)
     private UUID lineID;
+
+    @Column(nullable = false)
     private UUID startStationID;
+
+    @Column(nullable = false)
     private UUID endStationID;
 
     private LocalDateTime createdAt;
