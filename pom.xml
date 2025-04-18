@@ -31,6 +31,7 @@
         <module>modules/Cart</module>
         <module>modules/Invoice</module>
         <module>modules/InvoiceItem</module>
+        <module>modules/TicketType</module>
     </modules>
     <scm>
         <connection/>
