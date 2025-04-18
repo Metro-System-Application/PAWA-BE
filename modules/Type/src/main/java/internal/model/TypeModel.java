@@ -22,6 +22,8 @@ public class TypeModel {
     private UUID id;
 
     private String typeName;
+
+    @Enumerated(EnumType.STRING)
     private TicketType ticketType;
     private BigDecimal price;
     private LocalTime expiryInterval;

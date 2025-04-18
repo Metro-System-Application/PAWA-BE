@@ -8,7 +8,6 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import pawa_be.profile.internal.model.Passenger;
 
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -24,6 +23,8 @@ public class ImagesModel {
     private UUID imageID;
 
     private String imageURL;
+
+    @Enumerated(EnumType.STRING)
     private ImageType imageType;
 
     @OneToOne
