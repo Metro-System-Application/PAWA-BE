@@ -35,9 +35,10 @@ public class JwtUtil {
             return Jwts.builder()
                     .claims(claims)
                     .subject(userDetails.getUsername())
+                    .issuer("PAWA Backend")
                     .issuedAt(new Date(System.currentTimeMillis()))
                     .expiration(Date.from(Instant.now().plusSeconds(TOKEN_VALIDITY)))
-                    .signWith(privateKey)
+                    .signWith(privateKey, Jwts.SIG.RS256)
                     .compact();
         } catch (Exception e) {
             throw new RuntimeException("Error while signing JWT", e);

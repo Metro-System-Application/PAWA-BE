@@ -6,6 +6,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -19,10 +20,15 @@ import org.springframework.web.bind.annotation.*;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+
+import pawa_be.common.dto.GenericResponseDTO;
 import pawa_be.infrastructure.jwt.config.HttpOnlyCookieConfig;
 import pawa_be.infrastructure.jwt.config.UserAuthConfig;
-import pawa_be.user_auth.internal.dto.DtoAuthResponse;
-import pawa_be.user_auth.internal.dto.DtoLogin;
+import pawa_be.infrastructure.jwt.config.UserRoleConfig;
+import pawa_be.user_auth.internal.dto.RequestRegisterUserDTO;
+import pawa_be.user_auth.internal.dto.ResponseLoginUserDTO;
+import pawa_be.user_auth.internal.dto.RequestLoginUserDTO;
+import pawa_be.user_auth.internal.dto.ResponseRegisterUserDTO;
 import pawa_be.user_auth.internal.model.UserAuthModel;
 import pawa_be.user_auth.internal.service.UserAuthService;
 
@@ -35,7 +41,7 @@ class UserController {
     private AuthenticationManager authenticationManager;
 
     @Autowired
-    private UserAuthService userService;
+    private UserAuthService userAuthService;
 
     @Autowired
     private BCryptPasswordEncoder passwordEncoder;
@@ -43,37 +49,51 @@ class UserController {
     @Operation(summary = "Register a new user")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "201", description = "User registered successfully",
-                    content = @Content(schema = @Schema(implementation = UserAuthModel.class))),
-            @ApiResponse(responseCode = "400", description = "Invalid input"),
+                    content = @Content(schema = @Schema(implementation = GenericResponseDTO.class))),
+            @ApiResponse(responseCode = "400", description = "User already exists or invalid input"),
             @ApiResponse(responseCode = "500", description = "Server error")
     })
     @PostMapping("/register")
-    public ResponseEntity<UserAuthModel> registerUser(@RequestBody UserAuthModel user) {
+    public ResponseEntity<GenericResponseDTO<?>> registerUser(@Valid @RequestBody RequestRegisterUserDTO user) {
+        if (userAuthService.existsByEmail(user.getEmail())) {
+            return ResponseEntity
+                    .status(HttpStatus.BAD_REQUEST)
+                    .body(new GenericResponseDTO<>(false, "User with this email already exists.", null));
+        }
 
+        UserRoleConfig role = user.getRole() != null ? user.getRole() : UserRoleConfig.PASSENGER;
         UserAuthModel userWithHashedPassword = new UserAuthModel(
                 user.getEmail(),
                 passwordEncoder.encode(user.getPassword()),
-                user.getRole()
+                role
         );
 
-        UserAuthModel newUser = userService.createUser(userWithHashedPassword);
-        return new ResponseEntity<>(newUser, HttpStatus.CREATED);
+        UserAuthModel newUser = userAuthService.createUser(userWithHashedPassword);
+
+        ResponseRegisterUserDTO responseData = new ResponseRegisterUserDTO(
+                newUser.getUserId(),
+                newUser.getEmail(),
+                newUser.getRole()
+        );
+
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .body(new GenericResponseDTO<>(true, "User registered successfully", responseData));
     }
 
     @Operation(summary = "Login a user and set auth token as HttpOnly cookie")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "User authenticated successfully",
-                    content = @Content(schema = @Schema(implementation = DtoAuthResponse.class))),
+                    content = @Content(schema = @Schema(implementation = ResponseLoginUserDTO.class))),
             @ApiResponse(responseCode = "400", description = "Authentication failed"),
             @ApiResponse(responseCode = "500", description = "Server error")
     })
     @PostMapping("/login")
-    public ResponseEntity<DtoAuthResponse> login(
+    public ResponseEntity<ResponseLoginUserDTO> login(
             HttpServletRequest request,
             HttpServletResponse response,
-            @RequestBody DtoLogin loginDto
+            @RequestBody RequestLoginUserDTO loginDto
     ) {
-
         String username = loginDto.getEmail();
         String password = loginDto.getPassword();
 
@@ -84,17 +104,13 @@ class UserController {
                     password
             );
 
-            long startTime = System.currentTimeMillis();
             Authentication token = authenticationManager.authenticate(credentialToken);
-            long duration = System.currentTimeMillis() - startTime;
-            System.out.println("Authentication Duration: " + duration + "ms");
-            System.out.println("User Authenticated: " + token.isAuthenticated());
-            String userAuthToken = userService.createAuthToken(
+            String userAuthToken = userAuthService.createAuthToken(
                     (UserDetails) token.getPrincipal(),
                     token.isAuthenticated()
             );
 
-            DtoAuthResponse responseDto = new DtoAuthResponse(userAuthToken);
+            ResponseLoginUserDTO responseDto = new ResponseLoginUserDTO(userAuthToken);
 
             if (token.isAuthenticated()) {
                 Cookie cookie = HttpOnlyCookieConfig.createCookie(

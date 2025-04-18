@@ -22,23 +22,27 @@ public class UserAuthService implements UserDetailsService  {
     private JwtUtil jwtUtil;
 
     @Autowired
-    private UserAuthRepository userRepository;
+    private UserAuthRepository userAuthRepository;
 
     public UserAuthModel createUser(UserAuthModel user) {
-        return userRepository.save(user);
+        return userAuthRepository.save(user);
+    }
+
+    public boolean existsByEmail(String email) {
+        return userAuthRepository.findByEmail(email) != null;
     }
 
     public String createAuthToken(UserDetails user, boolean isValidCredential) {
         if (isValidCredential) {
             return jwtUtil.generateToken(user);
         } else {
-            return "N/A";
+            return null;
         }
     }
 
     @Override
     public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
-        UserAuthModel user = userRepository.findByEmail(email);
+        UserAuthModel user = userAuthRepository.findByEmail(email);
 
         if (user == null) {
             return new User(UserAuthConfig.USER_AUTH_INVALID_PLACEHOLDER,
@@ -48,7 +52,7 @@ public class UserAuthService implements UserDetailsService  {
             return User
                     .withUsername(user.getEmail())
                     .password(user.getPassword())
-                    .roles(user.getRole())
+                    .roles(user.getRole().getRoleName())
                     .build();
         }
 
