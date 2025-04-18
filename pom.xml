@@ -28,6 +28,8 @@
         <module>modules/EWallet</module>
         <module>modules/Images</module>
         <module>modules/TopUpTransaction</module>
+        <module>modules/Cart</module>
+        <module>modules/Invoice</module>
     </modules>
     <scm>
         <connection/>
