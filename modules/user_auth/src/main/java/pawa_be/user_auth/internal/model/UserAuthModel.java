@@ -1,0 +1,36 @@
+package pawa_be.user_auth.internal.model;
+
+import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
+import jakarta.persistence.Column;
+
+import lombok.Getter;
+import pawa_be.infrastructure.jwt.config.UserRoleConfig;
+
+@Getter
+@Entity
+@Table(name = "user_auth")
+public class UserAuthModel {
+    @Schema(type = "integer", format = "int64", description = "Auto-generated user ID")
+    @Id
+    @GeneratedValue(strategy = GenerationType.SEQUENCE)
+    private Long userId;
+
+    @Column(unique = true)
+    private String email;
+
+    private String password;
+    private UserRoleConfig role;
+
+    public UserAuthModel(String username, String password, UserRoleConfig role) {
+        this.email = username;
+        this.password = password;
+        this.role = role;
+    }
+
+    public UserAuthModel() {}
+}

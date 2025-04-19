@@ -17,6 +17,7 @@
         <module>payment</module>
         <module>ticket</module>
         <module>cart</module>
+        <module>user_auth</module>
     </modules>
 
     <properties>

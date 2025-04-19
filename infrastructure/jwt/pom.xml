@@ -5,12 +5,13 @@
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>pawa_be</groupId>
-        <artifactId>PAWA_BE</artifactId>
+        <artifactId>infrastructure</artifactId>
         <version>0.0.1-SNAPSHOT</version>
     </parent>
 
-    <artifactId>infrastructure</artifactId>
-    <packaging>pom</packaging>
+    <groupId>pawa_be.infrastructure.jwt</groupId>
+    <artifactId>jwt</artifactId>
+    <packaging>jar</packaging>
 
     <properties>
         <maven.compiler.source>23</maven.compiler.source>
@@ -18,8 +19,4 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
 
-    <modules>
-        <module>jwt</module>
-        <module>common</module>
-    </modules>
 </project>
