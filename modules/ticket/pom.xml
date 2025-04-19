@@ -7,17 +7,11 @@
         <groupId>pawa_be</groupId>
         <artifactId>PAWA_BE</artifactId>
         <version>0.0.1-SNAPSHOT</version>
+        <relativePath>../../pom.xml</relativePath>
     </parent>
 
-    <artifactId>modules</artifactId>
-    <packaging>pom</packaging>
-
-    <modules>
-        <module>profile</module>
-        <module>payment</module>
-        <module>ticket</module>
-        <module>cart</module>
-    </modules>
+    <groupId>pawa_be.ticket</groupId>
+    <artifactId>ticket</artifactId>
 
     <properties>
         <maven.compiler.source>23</maven.compiler.source>

@@ -25,14 +25,9 @@
         <module>infrastructure</module>
         <module>application</module>
         <module>modules</module>
-        <module>modules/EWallet</module>
-        <module>modules/Images</module>
-        <module>modules/TopUpTransaction</module>
-        <module>modules/Cart</module>
-        <module>modules/Invoice</module>
-        <module>modules/InvoiceItem</module>
-        <module>modules/Type</module>
-        <module>modules/CartItem</module>
+        <module>modules/payment</module>
+        <module>modules/cart</module>
+        <module>modules/ticket</module>
     </modules>
     <scm>
         <connection/>

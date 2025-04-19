@@ -1,4 +1,4 @@
-package pawa_be.profile.internal.controller;
+package pawa_be.ticket.internal.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -7,13 +7,13 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/profile")
-@Tag(name = "Profile Controller", description = "Operations about passengers")
-public class PassengerController {
+@RequestMapping("/ticket")
+@Tag(name = "Ticket Controller", description = "Operations about tickets")
+public class TicketController {
 
     @GetMapping("")
-    @Operation(summary = "Greet passenger", description = "Returns \"Hello, Passenger!\" message.")
+    @Operation(summary = "Ticket controller", description = "Returns \"Hello, Ticket!\" message.")
     public String greet(){
-        return "Hello, Passenger!";
+        return "Hello, Ticket!";
     }
 }
