@@ -7,23 +7,24 @@
         <groupId>pawa_be</groupId>
         <artifactId>PAWA_BE</artifactId>
         <version>0.0.1-SNAPSHOT</version>
+        <relativePath>../../pom.xml</relativePath>
     </parent>
 
-    <artifactId>modules</artifactId>
-    <packaging>pom</packaging>
-
-    <modules>
-        <module>profile</module>
-        <module>payment</module>
-        <module>ticket</module>
-        <module>cart</module>
-        <module>user_auth</module>
-    </modules>
+    <groupId>pawa_be.payment</groupId>
+    <artifactId>payment</artifactId>
 
     <properties>
         <maven.compiler.source>23</maven.compiler.source>
         <maven.compiler.target>23</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
+    <dependencies>
+        <dependency>
+            <groupId>pawa_be.profile</groupId>
+            <artifactId>profile</artifactId>
+            <version>0.0.1-SNAPSHOT</version>
+            <scope>compile</scope>
+        </dependency>
+    </dependencies>
 
 </project>
