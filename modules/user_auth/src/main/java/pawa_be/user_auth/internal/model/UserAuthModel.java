@@ -9,11 +9,13 @@ import jakarta.persistence.Table;
 import jakarta.persistence.Column;
 
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import pawa_be.infrastructure.jwt.config.UserRoleConfig;
 
 @Getter
 @Entity
 @Table(name = "user_auth")
+@NoArgsConstructor
 public class UserAuthModel {
     @Schema(type = "integer", format = "int64", description = "Auto-generated user ID")
     @Id
@@ -24,13 +26,13 @@ public class UserAuthModel {
     private String email;
 
     private String password;
+    // TODO: add again when connect the db with OPWA
     private UserRoleConfig role;
 
-    public UserAuthModel(String username, String password, UserRoleConfig role) {
+    public UserAuthModel(String username, String password) {
         this.email = username;
         this.password = password;
-        this.role = role;
+        // TODO: add again when connect the db with OPWA
+        this.role = UserRoleConfig.PASSENGER;
     }
-
-    public UserAuthModel() {}
 }

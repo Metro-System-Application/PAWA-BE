@@ -64,8 +64,7 @@ class UserController {
         UserRoleConfig role = user.getRole() != null ? user.getRole() : UserRoleConfig.PASSENGER;
         UserAuthModel userWithHashedPassword = new UserAuthModel(
                 user.getEmail(),
-                passwordEncoder.encode(user.getPassword()),
-                role
+                passwordEncoder.encode(user.getPassword())
         );
 
         UserAuthModel newUser = userAuthService.createUser(userWithHashedPassword);
@@ -73,7 +72,7 @@ class UserController {
         ResponseRegisterUserDTO responseData = new ResponseRegisterUserDTO(
                 newUser.getUserId(),
                 newUser.getEmail(),
-                newUser.getRole()
+                UserRoleConfig.PASSENGER
         );
 
         return ResponseEntity
