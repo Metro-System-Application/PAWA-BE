@@ -9,7 +9,7 @@ import pawa_be.infrastructure.jwt.config.UserRoleConfig;
 @AllArgsConstructor
 public class ResponseRegisterUserDTO {
     @Schema(example = "101")
-    private Long userId;
+    private String userId;
 
     @Schema(example = "user@example.com")
     private String email;

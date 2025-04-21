@@ -17,11 +17,11 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @Setter
 @Getter
-public class Passenger {
+public class PassengerModel {
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
     private String passengerID;
 
+    // TODO: to be removed
     @Column(unique = true)
     private String passengerEmail;
 

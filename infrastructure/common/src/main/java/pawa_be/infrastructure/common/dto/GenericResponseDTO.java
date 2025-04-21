@@ -1,4 +1,4 @@
-package pawa_be.common.dto;
+package pawa_be.infrastructure.common.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;

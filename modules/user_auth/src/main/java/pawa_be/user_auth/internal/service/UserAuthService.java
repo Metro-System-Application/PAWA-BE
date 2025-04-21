@@ -12,6 +12,10 @@ import org.springframework.stereotype.Component;
 
 import pawa_be.infrastructure.jwt.JwtUtil;
 import pawa_be.infrastructure.jwt.config.UserAuthConfig;
+import pawa_be.profile.external.service.ExternalPassengerService;
+import pawa_be.user_auth.internal.dto.RequestUpdateUserDTO;
+import pawa_be.user_auth.internal.enumeration.UpdateUserAuthDataResult;
+import pawa_be.user_auth.internal.enumeration.UpdateUserResult;
 import pawa_be.user_auth.internal.model.UserAuthModel;
 import pawa_be.user_auth.internal.repository.UserAuthRepository;
 
@@ -23,6 +27,9 @@ public class UserAuthService implements UserDetailsService  {
 
     @Autowired
     private UserAuthRepository userAuthRepository;
+
+    @Autowired
+    private ExternalPassengerService externalPassengerService;
 
     public UserAuthModel createUser(UserAuthModel user) {
         return userAuthRepository.save(user);
@@ -55,6 +62,30 @@ public class UserAuthService implements UserDetailsService  {
                     .roles(user.getRole().getRoleName())
                     .build();
         }
-
     }
+
+    public UpdateUserResult updateUserCredentials(String currentEmail, RequestUpdateUserDTO userData) {
+        UserAuthModel currentUser = userAuthRepository.findByEmail(currentEmail);
+        if (currentUser == null) {
+            return new UpdateUserResult(UpdateUserAuthDataResult.CURRENT_EMAIL_NOT_FOUND, null);
+        }
+
+        final String newEmail = userData.getEmail();
+        if (newEmail != null && !newEmail.isBlank()) {
+            if (!currentEmail.equals(newEmail) && existsByEmail(newEmail)) {
+                return new UpdateUserResult(UpdateUserAuthDataResult.NEW_EMAIL_ALREADY_EXISTS, null);
+            }
+            externalPassengerService.updatePassengerByEmail(currentEmail, newEmail);
+            currentUser.setEmail(newEmail);
+        }
+
+        String newPassword = userData.getPassword();
+        if (newPassword != null && !newPassword.isBlank()) {
+            currentUser.setPassword(newPassword);
+        }
+
+        UserAuthModel updatedUser = userAuthRepository.save(currentUser);
+        return new UpdateUserResult(UpdateUserAuthDataResult.SUCCESS, updatedUser);
+    }
+
 }

@@ -10,17 +10,18 @@ import jakarta.persistence.Column;
 
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 import pawa_be.infrastructure.jwt.config.UserRoleConfig;
 
 @Getter
+@Setter
 @Entity
 @Table(name = "user_auth")
 @NoArgsConstructor
 public class UserAuthModel {
-    @Schema(type = "integer", format = "int64", description = "Auto-generated user ID")
     @Id
-    @GeneratedValue(strategy = GenerationType.SEQUENCE)
-    private Long userId;
+    @GeneratedValue(strategy = GenerationType.UUID)
+    private String userId;
 
     @Column(unique = true)
     private String email;
