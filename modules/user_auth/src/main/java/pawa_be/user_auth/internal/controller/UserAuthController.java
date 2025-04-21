@@ -7,33 +7,43 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import jakarta.validation.executable.ValidateOnExecution;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
-import pawa_be.common.dto.GenericResponseDTO;
+import pawa_be.infrastructure.common.dto.GenericResponseDTO;
+import pawa_be.infrastructure.jwt.JwtUtil;
 import pawa_be.infrastructure.jwt.config.HttpOnlyCookieConfig;
 import pawa_be.infrastructure.jwt.config.UserAuthConfig;
 import pawa_be.infrastructure.jwt.config.UserRoleConfig;
-import pawa_be.user_auth.internal.dto.RequestRegisterUserDTO;
-import pawa_be.user_auth.internal.dto.ResponseLoginUserDTO;
-import pawa_be.user_auth.internal.dto.RequestLoginUserDTO;
-import pawa_be.user_auth.internal.dto.ResponseRegisterUserDTO;
+import pawa_be.profile.external.service.ExternalPassengerService;
+import pawa_be.profile.internal.model.PassengerModel;
+import pawa_be.user_auth.internal.dto.*;
+import pawa_be.user_auth.internal.enumeration.UpdateUserResult;
 import pawa_be.user_auth.internal.model.UserAuthModel;
 import pawa_be.user_auth.internal.service.UserAuthService;
 
+import java.util.Optional;
+
+@Validated
+@ValidateOnExecution
 @RestController
 @RequestMapping("/auth")
+@RequiredArgsConstructor
 @Tag(name = "User Auth Controller", description = "Operations about registration and authentication")
 class UserController {
 
@@ -45,6 +55,9 @@ class UserController {
 
     @Autowired
     private BCryptPasswordEncoder passwordEncoder;
+
+    @Autowired
+    private ExternalPassengerService externalPassengerService;
 
     @Operation(summary = "Register a new user")
     @ApiResponses(value = {
@@ -61,13 +74,17 @@ class UserController {
                     .body(new GenericResponseDTO<>(false, "User with this email already exists.", null));
         }
 
-        UserRoleConfig role = user.getRole() != null ? user.getRole() : UserRoleConfig.PASSENGER;
         UserAuthModel userWithHashedPassword = new UserAuthModel(
                 user.getEmail(),
                 passwordEncoder.encode(user.getPassword())
         );
 
         UserAuthModel newUser = userAuthService.createUser(userWithHashedPassword);
+        PassengerModel newPassenger = externalPassengerService.registerPassenger(
+                newUser.getUserId(),
+                newUser.getEmail(),
+                user.getPassengerData()
+        );
 
         ResponseRegisterUserDTO responseData = new ResponseRegisterUserDTO(
                 newUser.getUserId(),
@@ -88,7 +105,7 @@ class UserController {
             @ApiResponse(responseCode = "500", description = "Server error")
     })
     @PostMapping("/login")
-    public ResponseEntity<ResponseLoginUserDTO> login(
+    public ResponseEntity<GenericResponseDTO<?>> login(
             HttpServletRequest request,
             HttpServletResponse response,
             @RequestBody RequestLoginUserDTO loginDto
@@ -117,14 +134,70 @@ class UserController {
                         userAuthToken
                 );
                 response.addCookie(cookie);
-                return new ResponseEntity<>(responseDto, HttpStatus.OK);
+                return ResponseEntity
+                        .status(HttpStatus.OK)
+                        .body(new GenericResponseDTO<>(true, "User logged in successfully", responseDto));
             } else {
-                return new ResponseEntity<>(responseDto, HttpStatus.BAD_REQUEST);
+                return ResponseEntity
+                        .status(HttpStatus.BAD_REQUEST)
+                        .body(new GenericResponseDTO<>(false, "Bad credentials.", null));
             }
         } catch (Exception e) {
             System.err.println("Error when logging in: " + e.getMessage());
-            return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);
+            return ResponseEntity
+                    .status(HttpStatus.BAD_REQUEST)
+                    .body(new GenericResponseDTO<>(false, "Bad credentials.", null));
         }
+    }
+
+    @PutMapping("/update-my-info")
+    public ResponseEntity<GenericResponseDTO<?>> updateUserInfo(
+            HttpServletRequest request,
+            HttpServletResponse response,
+            Authentication authentication,
+            @Valid @RequestBody RequestUpdateUserDTO user) {
+        final String email = authentication.getName();
+
+        if (user.getPassword() != null) {
+            user.setPassword(passwordEncoder.encode(user.getPassword()));
+        }
+
+        UpdateUserResult result = userAuthService.updateUserCredentials(email, user);
+
+        try {
+            switch (result.getStatus()) {
+                case CURRENT_EMAIL_NOT_FOUND:
+                    return ResponseEntity
+                            .badRequest()
+                            .body(new GenericResponseDTO<>(false, "User not found", null));
+                case NEW_EMAIL_ALREADY_EXISTS:
+                    return ResponseEntity
+                            .badRequest()
+                            .body(new GenericResponseDTO<>(false, "Email already in use", null));
+                case SUCCESS: {
+                        UserDetails userDetails = userAuthService.loadUserByUsername(user.getEmail());
+                        String authToken = userAuthService.createAuthToken(userDetails, true);
+
+                        Cookie cookie = HttpOnlyCookieConfig.createCookie(
+                                UserAuthConfig.USER_AUTH_COOKIE_NAME,
+                                authToken
+                        );
+                        response.addCookie(cookie);
+
+                        return ResponseEntity
+                                .status(HttpStatus.CREATED)
+                                .body(new GenericResponseDTO<>(true, "Data updated successfully", null));
+                }
+            }
+        } catch (Exception e) {
+            return ResponseEntity
+                    .status(HttpStatus.BAD_REQUEST)
+                    .body(new GenericResponseDTO<>(false, "Error when updating info", null));
+        }
+
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(new GenericResponseDTO<>(false, "Error when updating info", null));
     }
 }
 

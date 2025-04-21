@@ -7,7 +7,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
-import pawa_be.profile.internal.model.Passenger;
+import pawa_be.profile.internal.model.PassengerModel;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -25,7 +25,7 @@ public class CartModel {
 
     @OneToOne
     @JoinColumn(name="passenger_id", referencedColumnName = "passengerID", nullable = false)
-    private Passenger passenger;
+    private PassengerModel passengerModel;
 
     @CreationTimestamp
     @Column(updatable = false)

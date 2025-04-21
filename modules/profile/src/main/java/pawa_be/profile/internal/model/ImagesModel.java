@@ -30,7 +30,7 @@ public class ImagesModel {
 
     @OneToOne
     @JoinColumn(name = "passenger_id", referencedColumnName = "passengerID", nullable = false)
-    private Passenger passenger;
+    private PassengerModel passengerModel;
 
     @CreationTimestamp
     @Column(updatable = false)

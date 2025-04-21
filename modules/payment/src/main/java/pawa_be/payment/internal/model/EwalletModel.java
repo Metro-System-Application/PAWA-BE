@@ -5,7 +5,7 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import pawa_be.profile.internal.model.Passenger;
+import pawa_be.profile.internal.model.PassengerModel;
 
 import java.math.BigDecimal;
 import java.util.UUID;
@@ -26,7 +26,7 @@ public class EwalletModel {
 
     @OneToOne
     @JoinColumn(name = "passenger_id", referencedColumnName = "passengerID", nullable = false)
-    private Passenger passenger;
+    private PassengerModel passengerModel;
 
 
 }
