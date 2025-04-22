@@ -25,9 +25,6 @@
         <module>infrastructure</module>
         <module>application</module>
         <module>modules</module>
-<!--        <module>modules/payment</module>-->
-<!--        <module>modules/cart</module>-->
-<!--        <module>modules/ticket</module>-->
     </modules>
     <scm>
         <connection/>
@@ -37,6 +34,8 @@
     </scm>
     <properties>
         <java.version>23</java.version>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     </properties>
     <dependencies>
         <dependency>
@@ -127,6 +126,31 @@
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.13.0</version> <!-- Or your plugin version -->
+                <configuration>
+                    <source>23</source> <!-- Match your Java version -->
+                    <target>23</target> <!-- Match your Java version -->
+                    <annotationProcessorPaths>
+                        <path>
+                            <groupId>org.projectlombok</groupId>
+                            <artifactId>lombok</artifactId>
+                            <version>1.18.30</version> <!-- Match your lombok version -->
+                        </path>
+                        <!-- Other annotation processors can be added here -->
+                    </annotationProcessorPaths>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-resources-plugin</artifactId>
+                <version>3.3.1</version>
+                <configuration>
+                    <encoding>UTF-8</encoding>
+                </configuration>
             </plugin>
         </plugins>
     </build>
