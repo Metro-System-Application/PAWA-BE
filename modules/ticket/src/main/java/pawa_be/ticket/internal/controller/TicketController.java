@@ -24,12 +24,6 @@ public class TicketController {
         this.ticketService = ticketService;
     }
 
-    @GetMapping("")
-    @Operation(summary = "Ticket controller", description = "Returns \"Hello, Ticket!\" message.")
-    public String greet(){
-        return "Hello, Ticket!";
-    }
-
     @Operation(summary = "Get all ticket types", description = "Returns all ticket types.")
     @GetMapping("/ticket-type")
     @ApiResponse(
