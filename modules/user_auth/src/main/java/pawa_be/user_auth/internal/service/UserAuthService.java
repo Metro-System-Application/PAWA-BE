@@ -1,9 +1,11 @@
 package pawa_be.user_auth.internal.service;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -12,6 +14,7 @@ import org.springframework.stereotype.Component;
 
 import pawa_be.infrastructure.jwt.JwtUtil;
 import pawa_be.infrastructure.jwt.config.UserAuthConfig;
+import pawa_be.infrastructure.jwt.user_details.CustomUserDetails;
 import pawa_be.profile.external.service.ExternalPassengerService;
 import pawa_be.user_auth.internal.dto.RequestUpdateUserDTO;
 import pawa_be.user_auth.internal.enumeration.UpdateUserAuthDataResult;
@@ -39,11 +42,11 @@ public class UserAuthService implements UserDetailsService  {
         return userAuthRepository.findByEmail(email) != null;
     }
 
-    public String createAuthToken(UserDetails user, boolean isValidCredential) {
+    public String createAuthToken(CustomUserDetails user, boolean isValidCredential) {
         if (isValidCredential) {
             return jwtUtil.generateToken(user);
         } else {
-            return null;
+            throw new RuntimeException("Couldn't create auth token.");
         }
     }
 
@@ -52,16 +55,16 @@ public class UserAuthService implements UserDetailsService  {
         UserAuthModel user = userAuthRepository.findByEmail(email);
 
         if (user == null) {
-            return new User(UserAuthConfig.USER_AUTH_INVALID_PLACEHOLDER,
-                    "",
-                    new ArrayList<GrantedAuthority>());
-        } else {
-            return User
-                    .withUsername(user.getEmail())
-                    .password(user.getPassword())
-                    .roles(user.getRole().getRoleName())
-                    .build();
+            throw new UsernameNotFoundException("User not found");
         }
+
+        GrantedAuthority role = new SimpleGrantedAuthority(user.getRole().getRoleName());
+        return new CustomUserDetails(
+                user.getUserId(),
+                user.getEmail(),
+                user.getPassword(),
+                List.of(role)
+        );
     }
 
     public UpdateUserResult updateUserCredentials(String currentEmail, RequestUpdateUserDTO userData) {
@@ -75,6 +78,7 @@ public class UserAuthService implements UserDetailsService  {
             if (!currentEmail.equals(newEmail) && existsByEmail(newEmail)) {
                 return new UpdateUserResult(UpdateUserAuthDataResult.NEW_EMAIL_ALREADY_EXISTS, null);
             }
+            // TODO: remove when remove email from Passenger
             externalPassengerService.updatePassengerByEmail(currentEmail, newEmail);
             currentUser.setEmail(newEmail);
         }

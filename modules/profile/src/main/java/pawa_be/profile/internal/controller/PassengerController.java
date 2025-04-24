@@ -15,6 +15,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import pawa_be.infrastructure.common.dto.GenericResponseDTO;
+import pawa_be.infrastructure.jwt.user_details.CustomUserDetails;
 import pawa_be.profile.internal.dto.RequestUpdatePassengerDTO;
 import pawa_be.profile.internal.dto.ResponsePassengerDTO;
 import pawa_be.profile.internal.service.PassengerService;
@@ -27,6 +28,11 @@ public class PassengerController {
 
     @Autowired
     private final PassengerService passengerService;
+
+    private String getUserIdFromAuthentication(Authentication authentication) {
+        CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
+        return userDetails.getUserId();
+    }
 
     @GetMapping("/my-info")
     @Operation(
@@ -44,8 +50,8 @@ public class PassengerController {
     public ResponseEntity<GenericResponseDTO<ResponsePassengerDTO>> getPassengerInfo(
             @Parameter(hidden = true) Authentication authentication) {
 
-        final String email = authentication.getName();
-        ResponsePassengerDTO passenger = passengerService.getCurrentPassenger(email);
+        final String passengerId = getUserIdFromAuthentication(authentication);
+        ResponsePassengerDTO passenger = passengerService.getCurrentPassengerById(passengerId);
         return ResponseEntity.ok(new GenericResponseDTO<>(true, "Passenger info retrieved", passenger));
     }
 
@@ -69,8 +75,8 @@ public class PassengerController {
             @Valid @RequestBody
             @Parameter(description = "Updated phone number and/or address") RequestUpdatePassengerDTO updatedInfo) {
 
-        final String email = authentication.getName();
-        passengerService.updateCurrentPassenger(email, updatedInfo);
+        final String passengerId = getUserIdFromAuthentication(authentication);
+        passengerService.updateCurrentPassengerById(passengerId, updatedInfo);
         return ResponseEntity.ok(new GenericResponseDTO<>(true, "Passenger info updated", null));
     }
 }

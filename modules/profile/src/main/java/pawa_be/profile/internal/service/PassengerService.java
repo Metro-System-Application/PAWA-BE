@@ -17,9 +17,8 @@ public class PassengerService {
     @Autowired
     private final PassengerRepository passengerRepository;
 
-
-    public void updateCurrentPassenger(String email, @Valid RequestUpdatePassengerDTO updatedInfo) {
-        PassengerModel passenger = passengerRepository.findPassengerModelByPassengerEmail(email);
+    public void updateCurrentPassengerById(String passengerId, @Valid RequestUpdatePassengerDTO updatedInfo) {
+        PassengerModel passenger = passengerRepository.findPassengerModelByPassengerID(passengerId);
 
         if (updatedInfo.getPassengerPhone() != null) {
             passenger.setPassengerPhone(updatedInfo.getPassengerPhone());
@@ -33,8 +32,8 @@ public class PassengerService {
         passengerRepository.save(passenger);
     }
 
-    public ResponsePassengerDTO getCurrentPassenger(String email) {
-        PassengerModel passenger = passengerRepository.findPassengerModelByPassengerEmail(email);
+    public ResponsePassengerDTO getCurrentPassengerById(String passengerId) {
+        PassengerModel passenger = passengerRepository.findPassengerModelByPassengerID(passengerId);
 
         return new ResponsePassengerDTO(
                 passenger.getPassengerFirstName(),
