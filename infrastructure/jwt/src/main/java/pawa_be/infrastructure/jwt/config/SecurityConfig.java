@@ -42,6 +42,7 @@ public class SecurityConfig {
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
                         .requestMatchers("/auth/update-my-info").authenticated()
                         .requestMatchers("/profile/**").authenticated()
+                        .requestMatchers("/ticket/ticket-type").permitAll()
                         .anyRequest().authenticated()
                 );
 
