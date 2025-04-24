@@ -6,6 +6,7 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
 
+import pawa_be.infrastructure.common.validation.constant.RegexConstants;
 import pawa_be.infrastructure.common.validation.custom.CustomDateDeserializer;
 
 import java.time.LocalDate;
@@ -15,15 +16,15 @@ import java.time.LocalDate;
 @AllArgsConstructor
 public class RequestRegisterPassengerDTO {
     @NotBlank
-    @Pattern(regexp = "^[\\p{L}\\s]{1,50}$", message = "First name must contain only letters and spaces")
+    @Pattern(regexp = "^[" + RegexConstants.VIETNAMESE_LETTERS + "]{1,50}$", message = "First name must contain only letters")
     private String passengerFirstName;
 
     @NotBlank
-    @Pattern(regexp = "^[\\p{L}\\s]{1,50}$", message = "Middle name must contain only letters and spaces")
+    @Pattern(regexp = "^[" + RegexConstants.VIETNAMESE_LETTERS + "\\s]{1,50}$", message = "Middle name must contain only letters and spaces")
     private String passengerMiddleName;
 
     @NotBlank
-    @Pattern(regexp = "^[\\p{L}\\s]{1,50}$", message = "Last name must contain only letters and spaces")
+    @Pattern(regexp = "^[" + RegexConstants.VIETNAMESE_LETTERS + "]{1,50}$", message = "Last name must contain only letters")
     private String passengerLastName;
 
     @NotBlank
@@ -31,7 +32,7 @@ public class RequestRegisterPassengerDTO {
     private String passengerPhone;
 
     @NotBlank
-    @Pattern(regexp = "^[\\w\\s,./-]+$", message = "Address contains invalid characters")
+    @Pattern(regexp = "^[" + RegexConstants.VIETNAMESE_LETTERS + "0-9\\s,./-]+$", message = "Address contains invalid characters, must contain only letters, numbers, spaces and (,), (-), (.) or (/)")
     private String passengerAddress;
 
     @JsonDeserialize(using = CustomDateDeserializer.class)
