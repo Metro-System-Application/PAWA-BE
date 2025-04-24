@@ -1,9 +1,12 @@
 package pawa_be.profile.external.dto;
 
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import jakarta.validation.constraints.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
+
+import pawa_be.infrastructure.common.validation.custom.CustomDateDeserializer;
 
 import java.time.LocalDate;
 
@@ -31,6 +34,7 @@ public class RequestRegisterPassengerDTO {
     @Pattern(regexp = "^[\\w\\s,./-]+$", message = "Address contains invalid characters")
     private String passengerAddress;
 
+    @JsonDeserialize(using = CustomDateDeserializer.class)
     @NotNull
     @Past(message = "Date of birth must be in the past")
     private LocalDate passengerDateOfBirth;

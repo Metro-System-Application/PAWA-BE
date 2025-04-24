@@ -1,8 +1,10 @@
 package pawa_be.infrastructure.common.validation;
 
+import com.fasterxml.jackson.databind.exc.InvalidFormatException;
 import jakarta.validation.ConstraintViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -46,6 +48,31 @@ public class GlobalExceptionHandler {
         GenericResponseDTO<Map<String, String>> response = new GenericResponseDTO<>(
                 false,
                 "Validation failed",
+                errors
+        );
+
+        return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<GenericResponseDTO<Map<String, String>>> handleHttpMessageNotReadable(HttpMessageNotReadableException ex) {
+        Map<String, String> errors = new HashMap<>();
+
+        Throwable mostSpecificCause = ex.getMostSpecificCause();
+        if (mostSpecificCause instanceof InvalidFormatException formatException) {
+            String fieldName = formatException.getPath().getLast().getFieldName();
+            String detailedMessage = formatException.getMessage();
+            final String malformedValue = formatException.getValue().toString();
+            final String formattedDetailedMessage = detailedMessage.substring(0, detailedMessage.indexOf('\n'));
+            errors.put(fieldName, String.format(
+                    "Invalid value '%s', %s", malformedValue, formattedDetailedMessage));
+        } else {
+            errors.put("request", "Malformed request body. Please check your input.");
+        }
+
+        GenericResponseDTO<Map<String, String>> response = new GenericResponseDTO<>(
+                false,
+                "Invalid input",
                 errors
         );
 

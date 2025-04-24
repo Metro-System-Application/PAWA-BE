@@ -40,7 +40,6 @@ import pawa_be.user_auth.internal.service.UserAuthService;
 import java.util.Optional;
 
 @Validated
-@ValidateOnExecution
 @RestController
 @RequestMapping("/auth")
 @RequiredArgsConstructor
