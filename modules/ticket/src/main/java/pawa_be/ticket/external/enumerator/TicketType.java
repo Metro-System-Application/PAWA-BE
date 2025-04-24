@@ -1,4 +1,4 @@
-package pawa_be.ticket.internal.Enumerator;
+package pawa_be.ticket.external.enumerator;
 
 import lombok.Getter;
 

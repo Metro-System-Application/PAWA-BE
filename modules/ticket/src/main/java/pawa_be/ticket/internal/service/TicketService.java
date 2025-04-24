@@ -1,7 +1,7 @@
 package pawa_be.ticket.internal.service;
 
 import org.springframework.stereotype.Service;
-import pawa_be.ticket.internal.Enumerator.TicketType;
+import pawa_be.ticket.external.enumerator.TicketType;
 import pawa_be.ticket.internal.dto.TypeDto;
 
 import java.util.Arrays;

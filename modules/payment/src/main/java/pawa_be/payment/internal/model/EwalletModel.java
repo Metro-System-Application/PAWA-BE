@@ -27,6 +27,4 @@ public class EwalletModel {
     @OneToOne
     @JoinColumn(name = "passenger_id", referencedColumnName = "passengerID", nullable = false)
     private PassengerModel passengerModel;
-
-
 }
