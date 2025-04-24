@@ -20,6 +20,8 @@ import pawa_be.profile.internal.dto.RequestUpdatePassengerDTO;
 import pawa_be.profile.internal.dto.ResponsePassengerDTO;
 import pawa_be.profile.internal.service.PassengerService;
 
+import static pawa_be.infrastructure.jwt.misc.Miscellaneous.getUserIdFromAuthentication;
+
 @RestController
 @RequestMapping("/profile")
 @Tag(name = "Profile Controller", description = "Operations about passengers")
@@ -28,11 +30,6 @@ public class PassengerController {
 
     @Autowired
     private final PassengerService passengerService;
-
-    private String getUserIdFromAuthentication(Authentication authentication) {
-        CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
-        return userDetails.getUserId();
-    }
 
     @GetMapping("/my-info")
     @Operation(

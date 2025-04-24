@@ -6,7 +6,9 @@ import lombok.Getter;
 public enum UserRoleConfig {
     PASSENGER("PASSENGER"),
     ADMIN("ADMIN"),
-    GUEST("GUEST");
+    GUEST("GUEST"),
+    OPERATOR("OPERATOR"),
+    TICKET_AGENT("TICKET_AGENT");
 
     private final String roleName;
 

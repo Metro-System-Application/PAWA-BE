@@ -32,6 +32,7 @@ import pawa_be.infrastructure.jwt.config.HttpOnlyCookieConfig;
 import pawa_be.infrastructure.jwt.config.UserAuthConfig;
 import pawa_be.infrastructure.jwt.config.UserRoleConfig;
 import pawa_be.infrastructure.jwt.user_details.CustomUserDetails;
+import pawa_be.payment.external.service.ExternalPaymentService;
 import pawa_be.profile.external.service.ExternalPassengerService;
 import pawa_be.profile.internal.model.PassengerModel;
 import pawa_be.user_auth.internal.dto.*;
@@ -59,6 +60,9 @@ class UserAuthController {
 
     @Autowired
     private ExternalPassengerService externalPassengerService;
+
+    @Autowired
+    private ExternalPaymentService externalPaymentService;
 
     private String getLoginToken(String username, String password) {
         UsernamePasswordAuthenticationToken credentialToken
@@ -201,11 +205,14 @@ class UserAuthController {
         );
 
         UserAuthModel newUser = userAuthService.createUser(userWithHashedPassword);
+
         PassengerModel newPassenger = externalPassengerService.registerPassenger(
                 newUser.getUserId(),
                 newUser.getEmail(),
                 user.getPassengerData()
         );
+
+        externalPaymentService.createPassengerEwallet(newPassenger);
 
         ResponseRegisterUserDTO responseData = new ResponseRegisterUserDTO(
                 newUser.getUserId(),

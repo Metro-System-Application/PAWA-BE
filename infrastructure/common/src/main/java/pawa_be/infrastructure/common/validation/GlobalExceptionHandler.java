@@ -9,6 +9,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import pawa_be.infrastructure.common.dto.GenericResponseDTO;
+import pawa_be.infrastructure.common.validation.exceptions.NotFoundException;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -77,5 +78,16 @@ public class GlobalExceptionHandler {
         );
 
         return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler(NotFoundException.class)
+    public ResponseEntity<GenericResponseDTO<?>> handleNotFoundException(NotFoundException ex) {
+        GenericResponseDTO<Map<String, String>> response = new GenericResponseDTO<>(
+                false,
+                ex.getMessage(),
+                null
+        );
+
+        return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
     }
 }
