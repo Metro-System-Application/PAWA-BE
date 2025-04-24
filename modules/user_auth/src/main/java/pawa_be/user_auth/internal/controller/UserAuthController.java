@@ -2,6 +2,7 @@ package pawa_be.user_auth.internal.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -30,6 +31,7 @@ import pawa_be.infrastructure.jwt.JwtUtil;
 import pawa_be.infrastructure.jwt.config.HttpOnlyCookieConfig;
 import pawa_be.infrastructure.jwt.config.UserAuthConfig;
 import pawa_be.infrastructure.jwt.config.UserRoleConfig;
+import pawa_be.infrastructure.jwt.user_details.CustomUserDetails;
 import pawa_be.profile.external.service.ExternalPassengerService;
 import pawa_be.profile.internal.model.PassengerModel;
 import pawa_be.user_auth.internal.dto.*;
@@ -44,7 +46,7 @@ import java.util.Optional;
 @RequestMapping("/auth")
 @RequiredArgsConstructor
 @Tag(name = "User Auth Controller", description = "Operations about registration and authentication")
-class UserController {
+class UserAuthController {
 
     @Autowired
     private AuthenticationManager authenticationManager;
@@ -58,12 +60,132 @@ class UserController {
     @Autowired
     private ExternalPassengerService externalPassengerService;
 
+    private String getLoginToken(String username, String password) {
+        UsernamePasswordAuthenticationToken credentialToken
+                = new UsernamePasswordAuthenticationToken(
+                username,
+                password
+        );
+
+        Authentication token = authenticationManager.authenticate(credentialToken);
+        return userAuthService.createAuthToken(
+                (CustomUserDetails) token.getPrincipal(),
+                token.isAuthenticated()
+        );
+    }
+
+    @Operation(summary = "Check user auth credentials before registration")
+    @ApiResponses(value = {
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Email does not exist and is valid",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = GenericResponseDTO.class),
+                            examples = @ExampleObject(
+                                    name = "Valid Email",
+                                    summary = "Valid email input",
+                                    value = "{\"success\": true, \"message\": \"\", \"data\": null}"
+                            )
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "409",
+                    description = "Email already exists",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = GenericResponseDTO.class),
+                            examples = @ExampleObject(
+                                    name = "Email Conflict",
+                                    summary = "Email already exists",
+                                    value = "{\"success\": false, \"message\": \"Email already exists\", \"data\": null}"
+                            )
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "400",
+                    description = "Invalid email or password format",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = GenericResponseDTO.class),
+                            examples = @ExampleObject(
+                                    name = "Bad Request",
+                                    summary = "Invalid input",
+                                    value = "{\"success\": false, \"message\": \"Invalid email or password format\", \"data\": {\"email\": \"Sample email error\", \"password\": \"Sample password error\"}}"
+                            )
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "500",
+                    description = "Unexpected server error",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = GenericResponseDTO.class),
+                            examples = @ExampleObject(
+                                    name = "Server Error",
+                                    summary = "Internal error",
+                                    value = "{\"success\": false, \"message\": \"Server error\", \"data\": null}"
+                            )
+                    )
+            )
+    })
+    @GetMapping("/validate-login-data")
+    public ResponseEntity<GenericResponseDTO<?>> validateLoginData(@Valid @RequestBody RequestValidateUserLoginDataDTO requestValidateUserLoginDataDTO) {
+        boolean emailExists = userAuthService.existsByEmail(requestValidateUserLoginDataDTO.getEmail());
+        return ResponseEntity
+                .status(emailExists ? HttpStatus.CONFLICT : HttpStatus.OK)
+                .body(new GenericResponseDTO<>(
+                        !emailExists,
+                        emailExists ? "Email already exists" : "",
+                        null));
+    }
+
+
     @Operation(summary = "Register a new user")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "201", description = "User registered successfully",
-                    content = @Content(schema = @Schema(implementation = GenericResponseDTO.class))),
-            @ApiResponse(responseCode = "400", description = "User already exists or invalid input"),
-            @ApiResponse(responseCode = "500", description = "Server error")
+                    content = @Content(schema = @Schema(implementation = GenericResponseDTO.class),
+                            examples = @ExampleObject(
+                                    name = "Success",
+                                    summary = "Successful registration",
+                                    value = """
+                                    {
+                                      "success": true,
+                                      "message": "User registered successfully",
+                                      "data": {
+                                        "userId": "abc123",
+                                        "email": "user@example.com",
+                                        "role": "PASSENGER"
+                                      }
+                                    }
+                                    """
+                            ))),
+            @ApiResponse(responseCode = "400", description = "User already exists",
+                    content = @Content(schema = @Schema(implementation = GenericResponseDTO.class),
+                            examples = @ExampleObject(
+                                    name = "User Exists",
+                                    summary = "User already registered",
+                                    value = """
+                                    {
+                                      "success": false,
+                                      "message": "User with this email already exists.",
+                                      "data": null
+                                    }
+                                    """
+                            ))),
+            @ApiResponse(responseCode = "500", description = "Server error",
+                    content = @Content(schema = @Schema(implementation = GenericResponseDTO.class),
+                            examples = @ExampleObject(
+                                    name = "Server Error",
+                                    summary = "Something went wrong",
+                                    value = """
+                                    {
+                                      "success": false,
+                                      "message": "Internal server error",
+                                      "data": null
+                                    }
+                                    """
+                            )))
     })
     @PostMapping("/register")
     public ResponseEntity<GenericResponseDTO<?>> registerUser(@Valid @RequestBody RequestRegisterUserDTO user) {
@@ -113,34 +235,19 @@ class UserController {
         String password = loginDto.getPassword();
 
         try {
-            UsernamePasswordAuthenticationToken credentialToken
-                    = new UsernamePasswordAuthenticationToken(
-                    username,
-                    password
-            );
-
-            Authentication token = authenticationManager.authenticate(credentialToken);
-            String userAuthToken = userAuthService.createAuthToken(
-                    (UserDetails) token.getPrincipal(),
-                    token.isAuthenticated()
-            );
-
+            String userAuthToken = getLoginToken(username, password);
             ResponseLoginUserDTO responseDto = new ResponseLoginUserDTO(userAuthToken);
 
-            if (token.isAuthenticated()) {
-                Cookie cookie = HttpOnlyCookieConfig.createCookie(
-                        UserAuthConfig.USER_AUTH_COOKIE_NAME,
-                        userAuthToken
-                );
-                response.addCookie(cookie);
-                return ResponseEntity
-                        .status(HttpStatus.OK)
-                        .body(new GenericResponseDTO<>(true, "User logged in successfully", responseDto));
-            } else {
-                return ResponseEntity
-                        .status(HttpStatus.BAD_REQUEST)
-                        .body(new GenericResponseDTO<>(false, "Bad credentials.", null));
-            }
+            Cookie cookie = HttpOnlyCookieConfig.createCookie(
+                    UserAuthConfig.USER_AUTH_COOKIE_NAME,
+                    userAuthToken
+            );
+            response.addCookie(cookie);
+
+            return ResponseEntity
+                    .status(HttpStatus.OK)
+                    .body(new GenericResponseDTO<>(true, "User logged in successfully", responseDto));
+
         } catch (Exception e) {
             System.err.println("Error when logging in: " + e.getMessage());
             return ResponseEntity
@@ -174,7 +281,7 @@ class UserController {
                             .badRequest()
                             .body(new GenericResponseDTO<>(false, "Email already in use", null));
                 case SUCCESS: {
-                        UserDetails userDetails = userAuthService.loadUserByUsername(user.getEmail());
+                        CustomUserDetails userDetails = (CustomUserDetails) userAuthService.loadUserByUsername(user.getEmail());
                         String authToken = userAuthService.createAuthToken(userDetails, true);
 
                         Cookie cookie = HttpOnlyCookieConfig.createCookie(

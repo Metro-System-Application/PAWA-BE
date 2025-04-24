@@ -7,6 +7,7 @@ import io.jsonwebtoken.SignatureAlgorithm;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 import pawa_be.infrastructure.jwt.key.KeyStoreManager;
+import pawa_be.infrastructure.jwt.user_details.CustomUserDetails;
 
 import java.security.PrivateKey;
 import java.security.PublicKey;
@@ -24,12 +25,13 @@ public class JwtUtil {
         this.keyStoreManager = keyStoreManager;
     }
 
-    public String generateToken(UserDetails userDetails) {
+    public String generateToken(CustomUserDetails userDetails) {
         try {
             PrivateKey privateKey = keyStoreManager.getPrivateKey();
             int TOKEN_VALIDITY = 60 * 60 * 24; // One day validity
 
             Map<String, Object> claims = new HashMap<>();
+            claims.put("userId", userDetails.getUserId());
             claims.put("roles", userDetails.getAuthorities());
 
             return Jwts.builder()
