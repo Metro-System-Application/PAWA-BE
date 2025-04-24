@@ -8,5 +8,5 @@ public enum TicketType {
     THREE_DAY,
     MONTHLY_STUDENT,
     MONTHLY_ADULT,
-    FREEEEEEEE, //THIS IS FOR MEEEEE
+    FREE
 }

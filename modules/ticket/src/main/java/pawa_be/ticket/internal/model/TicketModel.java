@@ -11,7 +11,7 @@ import java.time.LocalTime;
 import java.util.UUID;
 
 @Entity
-@Table(name="images")
+@Table(name="ticket")
 @AllArgsConstructor
 @NoArgsConstructor
 @Getter

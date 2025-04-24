@@ -1,12 +1,7 @@
 package pawa_be.user_auth.internal.model;
 
 import io.swagger.v3.oas.annotations.media.Schema;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
-import jakarta.persistence.Column;
+import jakarta.persistence.*;
 
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -28,6 +23,7 @@ public class UserAuthModel {
 
     private String password;
     // TODO: add again when connect the db with OPWA
+    @Enumerated(EnumType.STRING)
     private UserRoleConfig role;
 
     public UserAuthModel(String username, String password) {
