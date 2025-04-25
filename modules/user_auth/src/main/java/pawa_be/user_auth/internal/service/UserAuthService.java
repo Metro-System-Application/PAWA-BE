@@ -78,8 +78,7 @@ public class UserAuthService implements UserDetailsService  {
             if (!currentEmail.equals(newEmail) && existsByEmail(newEmail)) {
                 return new UpdateUserResult(UpdateUserAuthDataResult.NEW_EMAIL_ALREADY_EXISTS, null);
             }
-            // TODO: remove when remove email from Passenger
-            externalPassengerService.updatePassengerByEmail(currentEmail, newEmail);
+
             currentUser.setEmail(newEmail);
         }
 

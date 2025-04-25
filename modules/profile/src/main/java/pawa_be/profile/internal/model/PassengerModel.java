@@ -23,10 +23,6 @@ public class PassengerModel {
     @Id
     private String passengerID;
 
-    // TODO: to be removed
-    @Column(unique = true)
-    private String passengerEmail;
-
     //User name
     @Column(nullable = false)
     private String passengerFirstName;
