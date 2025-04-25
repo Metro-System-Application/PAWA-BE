@@ -13,13 +13,10 @@ public class ExternalPassengerService implements IExternalPassengerService {
     @Autowired
     private PassengerRepository passengerRepository;
 
-    // TODO: email field has to be removed
     @Override
     public PassengerModel registerPassenger(String userId, String email, RequestRegisterPassengerDTO dto) {
         PassengerModel passenger = new PassengerModel();
         passenger.setPassengerID(userId);
-        // TODO: to be removed
-        passenger.setPassengerEmail(email);
         passenger.setPassengerFirstName(dto.getPassengerFirstName());
         passenger.setPassengerMiddleName(dto.getPassengerMiddleName());
         passenger.setPassengerLastName(dto.getPassengerLastName());
@@ -35,13 +32,5 @@ public class ExternalPassengerService implements IExternalPassengerService {
 
         passengerRepository.save(passenger);
         return passenger;
-    }
-
-    @Override
-    public void updatePassengerByEmail(String oldEmail, String newEmail) {
-        PassengerModel passenger = passengerRepository.findPassengerModelByPassengerEmail(oldEmail);
-        passenger.setPassengerEmail(newEmail);
-        passenger.setUpdatedAt(LocalDateTime.now());
-        passengerRepository.save(passenger);
     }
 }
