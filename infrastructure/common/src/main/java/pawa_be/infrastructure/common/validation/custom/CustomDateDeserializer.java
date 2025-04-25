@@ -24,7 +24,7 @@ public class CustomDateDeserializer extends JsonDeserializer<LocalDate> {
             }
 
             String errorMessage = String.format(
-                    "Field '%s' must be a date in format yyyy-MM-dd",
+                    "Field '%s' must be a date in format dd/MM/yyyy",
                     fieldName != null ? fieldName : "unknown"
             );
 
