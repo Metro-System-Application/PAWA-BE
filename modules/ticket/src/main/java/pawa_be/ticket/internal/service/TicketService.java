@@ -22,7 +22,8 @@ public class TicketService {
                 ticketType.getDisplayedName(),
                 ticketType.getPrice(),
                 ticketType.getExpiryDescription(),
-                ticketType.getEligibilityRequirements()
+                ticketType.getEligibilityRequirements(),
+                ticketType.getExpiryInterval()
         );
     }
 }

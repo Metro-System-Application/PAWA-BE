@@ -8,6 +8,7 @@ import lombok.Setter;
 import pawa_be.ticket.external.enumerator.TicketType;
 
 import java.math.BigDecimal;
+import java.time.Duration;
 
 @Getter
 @Setter
@@ -29,4 +30,6 @@ public class TypeDto {
     @Schema
     private String requirementDescription;
 
+    @Schema
+    private Duration expiryInterval;
 }
