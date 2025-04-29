@@ -133,7 +133,7 @@ class UserAuthController {
                     )
             )
     })
-    @GetMapping("/validate-login-data")
+    @PostMapping("/validate-login-data")
     public ResponseEntity<GenericResponseDTO<?>> validateLoginData(@Valid @RequestBody RequestValidateUserLoginDataDTO requestValidateUserLoginDataDTO) {
         boolean emailExists = userAuthService.existsByEmail(requestValidateUserLoginDataDTO.getEmail());
         return ResponseEntity
