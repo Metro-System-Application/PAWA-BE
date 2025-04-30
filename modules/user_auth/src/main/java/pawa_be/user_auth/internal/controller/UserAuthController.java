@@ -32,8 +32,8 @@ import pawa_be.infrastructure.jwt.config.HttpOnlyCookieConfig;
 import pawa_be.infrastructure.jwt.config.UserAuthConfig;
 import pawa_be.infrastructure.jwt.config.UserRoleConfig;
 import pawa_be.infrastructure.jwt.user_details.CustomUserDetails;
-import pawa_be.payment.external.service.ExternalPaymentService;
-import pawa_be.profile.external.service.ExternalPassengerService;
+import pawa_be.payment.external.service.IExternalPaymentService;
+import pawa_be.profile.external.service.IExternalPassengerService;
 import pawa_be.profile.internal.model.PassengerModel;
 import pawa_be.user_auth.internal.dto.*;
 import pawa_be.user_auth.internal.enumeration.UpdateUserResult;
@@ -59,10 +59,10 @@ class UserAuthController {
     private BCryptPasswordEncoder passwordEncoder;
 
     @Autowired
-    private ExternalPassengerService externalPassengerService;
+    private IExternalPassengerService externalPassengerService;
 
     @Autowired
-    private ExternalPaymentService externalPaymentService;
+    private IExternalPaymentService externalPaymentService;
 
     private String getLoginToken(String username, String password) {
         UsernamePasswordAuthenticationToken credentialToken
@@ -134,7 +134,7 @@ class UserAuthController {
             )
     })
     @PostMapping("/validate-login-data")
-    public ResponseEntity<GenericResponseDTO<?>> validateLoginData(@Valid @RequestBody RequestValidateUserLoginDataDTO requestValidateUserLoginDataDTO) {
+    ResponseEntity<GenericResponseDTO<?>> validateLoginData(@Valid @RequestBody RequestValidateUserLoginDataDTO requestValidateUserLoginDataDTO) {
         boolean emailExists = userAuthService.existsByEmail(requestValidateUserLoginDataDTO.getEmail());
         return ResponseEntity
                 .status(emailExists ? HttpStatus.CONFLICT : HttpStatus.OK)
@@ -192,7 +192,7 @@ class UserAuthController {
                             )))
     })
     @PostMapping("/register")
-    public ResponseEntity<GenericResponseDTO<?>> registerUser(@Valid @RequestBody RequestRegisterUserDTO user) {
+    ResponseEntity<GenericResponseDTO<?>> registerUser(@Valid @RequestBody RequestRegisterUserDTO user) {
         if (userAuthService.existsByEmail(user.getEmail())) {
             return ResponseEntity
                     .status(HttpStatus.BAD_REQUEST)
@@ -233,7 +233,7 @@ class UserAuthController {
             @ApiResponse(responseCode = "500", description = "Server error")
     })
     @PostMapping("/login")
-    public ResponseEntity<GenericResponseDTO<?>> login(
+    ResponseEntity<GenericResponseDTO<?>> login(
             HttpServletRequest request,
             HttpServletResponse response,
             @RequestBody RequestLoginUserDTO loginDto
@@ -264,7 +264,7 @@ class UserAuthController {
     }
 
     @PutMapping("/update-my-info")
-    public ResponseEntity<GenericResponseDTO<?>> updateUserInfo(
+    ResponseEntity<GenericResponseDTO<?>> updateUserInfo(
             HttpServletRequest request,
             HttpServletResponse response,
             Authentication authentication,

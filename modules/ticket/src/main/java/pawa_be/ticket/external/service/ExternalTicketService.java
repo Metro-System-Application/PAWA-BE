@@ -10,7 +10,7 @@ import java.math.BigDecimal;
 import java.util.Arrays;
 
 @Service
-public class ExternalTicketService implements IExternalTicketService {
+class ExternalTicketService implements IExternalTicketService {
     @Autowired
     TicketRepository ticketRepository;
 

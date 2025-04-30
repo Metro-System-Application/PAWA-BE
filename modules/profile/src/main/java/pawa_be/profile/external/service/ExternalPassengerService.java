@@ -9,7 +9,7 @@ import pawa_be.profile.internal.repository.PassengerRepository;
 import java.time.LocalDateTime;
 
 @Service
-public class ExternalPassengerService implements IExternalPassengerService {
+class ExternalPassengerService implements IExternalPassengerService {
     @Autowired
     private PassengerRepository passengerRepository;
 

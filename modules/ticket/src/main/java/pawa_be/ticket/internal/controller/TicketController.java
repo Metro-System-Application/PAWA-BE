@@ -16,11 +16,11 @@ import java.util.List;
 @RestController
 @RequestMapping("/ticket")
 @Tag(name = "Ticket Controller", description = "Operations about tickets")
-public class TicketController {
+class TicketController {
 
     private final TicketService ticketService;
 
-    public TicketController(TicketService ticketService) {
+    TicketController(TicketService ticketService) {
         this.ticketService = ticketService;
     }
 
@@ -35,7 +35,7 @@ public class TicketController {
     @ApiResponse(
             responseCode = "500", description = "Internal server error"
     )
-    public ResponseEntity<GenericResponseDTO<List<TypeDto>>> getAllTicketTypes(){
+    ResponseEntity<GenericResponseDTO<List<TypeDto>>> getAllTicketTypes(){
         List<TypeDto> ticketTypes = ticketService.getAllTicketType();
         return ResponseEntity.ok(
                 new GenericResponseDTO<>(

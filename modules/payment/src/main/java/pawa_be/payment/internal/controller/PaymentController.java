@@ -30,15 +30,9 @@ import static pawa_be.payment.internal.service.result.PurchaseTicketForPassenger
 @RequestMapping("/payment")
 @Tag(name = "Payment Controller", description = "Operations related to e-wallet payments and ticket purchases")
 @RequiredArgsConstructor
-public class PaymentController {
+class PaymentController {
     @Autowired
     private final PaymentService paymentService;
-
-    @Operation(summary = "Test endpoint", description = "Returns a simple greeting message for the Payment module.")
-    @GetMapping("")
-    public String greet(){
-        return "Hello, Payment!";
-    }
 
     @Operation(
             summary = "Purchase ticket(s) for passenger",
@@ -117,7 +111,7 @@ public class PaymentController {
             )
     })
     @PostMapping("/purchase-ticket/{passengerId}")
-    public ResponseEntity<GenericResponseDTO<?>> purchaseTicketForPassengerWithId(
+    ResponseEntity<GenericResponseDTO<?>> purchaseTicketForPassengerWithId(
             @Parameter(description = "Passenger ID of the person purchasing the ticket") @PathVariable String passengerId,
             @Valid @RequestBody
             @Parameter(description = "Details of the ticket(s) to be purchased")
@@ -206,7 +200,7 @@ public class PaymentController {
             )
     })
     @GetMapping("/top-up-balance/{amount}")
-    public ResponseEntity<GenericResponseDTO<?>> topUpBalance(
+    ResponseEntity<GenericResponseDTO<?>> topUpBalance(
             @Parameter(description = "Amount to top up in the wallet") @PathVariable int amount,
             @Parameter(hidden = true) Authentication authentication) {
 

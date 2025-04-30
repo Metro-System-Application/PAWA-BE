@@ -1,10 +1,7 @@
 package pawa_be.payment.internal.model;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
@@ -14,17 +11,14 @@ import java.util.UUID;
 
 @Entity
 @Table(name="invoice_item")
-@AllArgsConstructor
-@NoArgsConstructor
-@Getter
-@Setter
+@Data
 public class InvoiceItemModel {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID invoiceItemID;
 
     @ManyToOne
-    @JoinColumn(name="invoice_id", referencedColumnName = "invoiceID", nullable = false)
+    @JoinColumn(name="invoice_id", referencedColumnName = "invoiceID", nullable = false, insertable = false, updatable = false)
     private InvoiceModel invoiceModel;
 
     @Column(nullable = false)
