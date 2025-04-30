@@ -1,10 +1,7 @@
 package pawa_be.cart.internal.model;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
@@ -15,10 +12,7 @@ import java.util.UUID;
 
 @Entity
 @Table(name="cart_item")
-@AllArgsConstructor
-@NoArgsConstructor
-@Getter
-@Setter
+@Data
 public class CartItemModel {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
@@ -41,10 +35,10 @@ public class CartItemModel {
     private LocalDateTime updatedAt;
 
     @ManyToOne
-    @JoinColumn(name="cart_id", referencedColumnName = "cartID", nullable = false)
+    @JoinColumn(name="cart_id", referencedColumnName = "cartID", nullable = false, insertable = false, updatable = false)
     private CartModel cart;
 
     @ManyToOne
-    @JoinColumn(name = "type_id", referencedColumnName = "id", nullable = false)
+    @JoinColumn(name = "type_id", referencedColumnName = "id", nullable = false, insertable = false, updatable = false)
     private TicketModel type;
 }

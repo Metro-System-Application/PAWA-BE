@@ -1,10 +1,7 @@
 package pawa_be.profile.internal.model;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 import pawa_be.profile.internal.enumeration.ImageType;
@@ -14,10 +11,7 @@ import java.util.UUID;
 
 @Entity
 @Table(name="images")
-@AllArgsConstructor
-@NoArgsConstructor
-@Getter
-@Setter
+@Data
 public class ImagesModel {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
@@ -29,7 +23,7 @@ public class ImagesModel {
     private ImageType imageType;
 
     @OneToOne
-    @JoinColumn(name = "passenger_id", referencedColumnName = "passengerID", nullable = false)
+    @JoinColumn(name = "passenger_id", referencedColumnName = "passengerID", nullable = false, insertable = false, updatable = false)
     private PassengerModel passengerModel;
 
     @CreationTimestamp

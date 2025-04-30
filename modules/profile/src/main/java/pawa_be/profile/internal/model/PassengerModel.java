@@ -3,10 +3,7 @@ package pawa_be.profile.internal.model;
 //import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 //import com.fasterxml.jackson.datatype.jsr310.ser.LocalDateSerializer;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
@@ -15,10 +12,7 @@ import java.time.LocalDateTime;
 
 @Entity
 @Table(name="passenger")
-@AllArgsConstructor
-@NoArgsConstructor
-@Setter
-@Getter
+@Data
 public class PassengerModel {
     @Id
     private String passengerID;
