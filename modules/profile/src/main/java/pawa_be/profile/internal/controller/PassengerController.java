@@ -26,7 +26,7 @@ import static pawa_be.infrastructure.jwt.misc.Miscellaneous.getUserIdFromAuthent
 @RequestMapping("/profile")
 @Tag(name = "Profile Controller", description = "Operations about passengers")
 @RequiredArgsConstructor
-public class PassengerController {
+class PassengerController {
 
     @Autowired
     private final PassengerService passengerService;
@@ -44,7 +44,7 @@ public class PassengerController {
             @ApiResponse(responseCode = "500", description = "Internal server error",
                     content = @Content)
     })
-    public ResponseEntity<GenericResponseDTO<ResponsePassengerDTO>> getPassengerInfo(
+    ResponseEntity<GenericResponseDTO<ResponsePassengerDTO>> getPassengerInfo(
             @Parameter(hidden = true) Authentication authentication) {
 
         final String passengerId = getUserIdFromAuthentication(authentication);
@@ -67,7 +67,7 @@ public class PassengerController {
             @ApiResponse(responseCode = "500", description = "Internal server error",
                     content = @Content)
     })
-    public ResponseEntity<GenericResponseDTO<ResponsePassengerDTO>> updatePassengerInfo(
+    ResponseEntity<GenericResponseDTO<ResponsePassengerDTO>> updatePassengerInfo(
             @Parameter(hidden = true) Authentication authentication,
             @Valid @RequestBody
             @Parameter(description = "Updated phone number and/or address") RequestUpdatePassengerDTO updatedInfo) {

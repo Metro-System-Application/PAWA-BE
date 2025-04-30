@@ -9,11 +9,10 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/cart")
 @Tag(name = "Cart Controller", description = "Operations about cart")
-public class CartController {
-
+class CartController {
     @GetMapping("")
     @Operation(summary = "Future cart controller", description = "Returns \"Hello, Cart!\" message.")
-    public String greet(){
+    String greet(){
         return "Hello, Cart!";
     }
 }
