@@ -15,7 +15,7 @@ import org.springframework.stereotype.Component;
 import pawa_be.infrastructure.jwt.JwtUtil;
 import pawa_be.infrastructure.jwt.config.UserAuthConfig;
 import pawa_be.infrastructure.jwt.user_details.CustomUserDetails;
-import pawa_be.profile.external.service.ExternalPassengerService;
+import pawa_be.profile.external.service.IExternalPassengerService;
 import pawa_be.user_auth.internal.dto.RequestUpdateUserDTO;
 import pawa_be.user_auth.internal.enumeration.UpdateUserAuthDataResult;
 import pawa_be.user_auth.internal.enumeration.UpdateUserResult;
@@ -32,7 +32,7 @@ public class UserAuthService implements UserDetailsService  {
     private UserAuthRepository userAuthRepository;
 
     @Autowired
-    private ExternalPassengerService externalPassengerService;
+    private IExternalPassengerService externalPassengerService;
 
     public UserAuthModel createUser(UserAuthModel user) {
         return userAuthRepository.save(user);

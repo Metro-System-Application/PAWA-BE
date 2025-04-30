@@ -32,8 +32,8 @@ import pawa_be.infrastructure.jwt.config.HttpOnlyCookieConfig;
 import pawa_be.infrastructure.jwt.config.UserAuthConfig;
 import pawa_be.infrastructure.jwt.config.UserRoleConfig;
 import pawa_be.infrastructure.jwt.user_details.CustomUserDetails;
-import pawa_be.payment.external.service.ExternalPaymentService;
-import pawa_be.profile.external.service.ExternalPassengerService;
+import pawa_be.payment.external.service.IExternalPaymentService;
+import pawa_be.profile.external.service.IExternalPassengerService;
 import pawa_be.profile.internal.model.PassengerModel;
 import pawa_be.user_auth.internal.dto.*;
 import pawa_be.user_auth.internal.enumeration.UpdateUserResult;
@@ -59,10 +59,10 @@ class UserAuthController {
     private BCryptPasswordEncoder passwordEncoder;
 
     @Autowired
-    private ExternalPassengerService externalPassengerService;
+    private IExternalPassengerService externalPassengerService;
 
     @Autowired
-    private ExternalPaymentService externalPaymentService;
+    private IExternalPaymentService externalPaymentService;
 
     private String getLoginToken(String username, String password) {
         UsernamePasswordAuthenticationToken credentialToken

@@ -9,7 +9,7 @@ import pawa_be.profile.internal.model.PassengerModel;
 import java.math.BigDecimal;
 
 @Service
-public class ExternalPaymentService implements IExternalPaymentService {
+class ExternalPaymentService implements IExternalPaymentService {
     @Autowired
     EWalletRepository walletRepository;
 

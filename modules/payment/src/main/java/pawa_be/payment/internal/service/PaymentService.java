@@ -22,7 +22,7 @@ import pawa_be.payment.internal.model.EwalletModel;
 import pawa_be.payment.internal.repository.EWalletRepository;
 import pawa_be.payment.internal.service.result.PurchaseTicketForPassengerWithIdByOperatorResult;
 import pawa_be.payment.internal.service.result.PurchaseTicketForPassengerWithIdByOperatorResultType;
-import pawa_be.ticket.external.service.ExternalTicketService;
+import pawa_be.ticket.external.service.IExternalTicketService;
 import pawa_be.ticket.internal.model.TicketModel;
 
 import java.math.BigDecimal;
@@ -31,7 +31,7 @@ import java.util.List;
 @Service
 public class PaymentService {
     @Autowired
-    ExternalTicketService externalTicketService;
+    IExternalTicketService externalTicketService;
 
     @Autowired
     EWalletRepository eWalletRepository;
