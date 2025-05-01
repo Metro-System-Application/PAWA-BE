@@ -34,7 +34,7 @@ class TicketController {
         @ApiResponse(responseCode = "500", description = "Internal server error")
         ResponseEntity<GenericResponseDTO<List<TypeDto>>> getTicketTypes(
                         @RequestParam(required = false) String passengerId,
-                        @RequestParam(required = false) String email,
+                        @RequestParam(required = false) String phone,
                         @RequestParam(required = false) BigDecimal price,
                         @RequestParam(required = false) Long expiryHours,
                         @RequestParam(required = false) String metroLineId) {
@@ -63,9 +63,9 @@ class TicketController {
                 if (passengerId != null) {
                         // Filter by passenger eligibility using ID
                         ticketTypes = ticketTypeService.getEligibleTicketTypesForPassenger(passengerId);
-                } else if (email != null && !email.trim().isEmpty()) {
-                        // Filter by passenger eligibility using email
-                        ticketTypes = ticketTypeService.getEligibleTicketTypesForPassengerByEmail(email);
+                } else if (phone != null && !phone.trim().isEmpty()) {
+                        // Filter by passenger eligibility using phone
+                        ticketTypes = ticketTypeService.getEligibleTicketTypesForPassengerByPhone(phone);
                 } else {
                         // Get all active ticket types
                         ticketTypes = ticketTypeService.getAllTicketTypes();
@@ -111,15 +111,15 @@ class TicketController {
         @ApiResponse(responseCode = "400", description = "Missing required identification parameters")
         ResponseEntity<GenericResponseDTO<TypeDto>> getBestTicketForPassenger(
                         @RequestParam(required = false) String passengerId,
-                        @RequestParam(required = false) String email) {
+                        @RequestParam(required = false) String phone) {
 
                 // Verify at least one identification parameter is provided
                 if ((passengerId == null || passengerId.trim().isEmpty()) &&
-                                (email == null || email.trim().isEmpty())) {
+                                (phone == null || phone.trim().isEmpty())) {
                         return ResponseEntity.badRequest()
                                         .body(new GenericResponseDTO<>(
                                                         false,
-                                                        "Either passenger ID or email is required",
+                                                        "Either passenger ID or phone number is required",
                                                         null));
                 }
 
@@ -129,7 +129,7 @@ class TicketController {
                 if (passengerId != null && !passengerId.trim().isEmpty()) {
                         bestTicket = ticketTypeService.getBestTicketForPassenger(passengerId);
                 } else {
-                        bestTicket = ticketTypeService.getBestTicketForPassengerByEmail(email);
+                        bestTicket = ticketTypeService.getBestTicketForPassengerByPhone(phone);
                 }
 
                 if (bestTicket == null) {
@@ -207,39 +207,6 @@ class TicketController {
                                                 true,
                                                 attributeMessage.toString() + "the best ticket option is: "
                                                                 + bestTicket.getTypeName(),
-                                                bestTicket));
-        }
-
-        @Operation(summary = "Get best ticket type for passenger by email", description = "Returns the most advantageous ticket type for a passenger identified by email")
-        @GetMapping("/best-ticket-by-email")
-        @ApiResponse(responseCode = "200", description = "Best ticket option retrieved successfully")
-        @ApiResponse(responseCode = "404", description = "No eligible tickets found")
-        @ApiResponse(responseCode = "400", description = "Missing required email")
-        ResponseEntity<GenericResponseDTO<TypeDto>> getBestTicketForPassengerByEmail(
-                        @RequestParam String email) {
-
-                if (email == null || email.trim().isEmpty()) {
-                        return ResponseEntity.badRequest()
-                                        .body(new GenericResponseDTO<>(
-                                                        false,
-                                                        "Email is required",
-                                                        null));
-                }
-
-                TypeDto bestTicket = ticketTypeService.getBestTicketForPassengerByEmail(email);
-
-                if (bestTicket == null) {
-                        return ResponseEntity.status(404)
-                                        .body(new GenericResponseDTO<>(
-                                                        false,
-                                                        "No eligible tickets found for this email",
-                                                        null));
-                }
-
-                return ResponseEntity.ok(
-                                new GenericResponseDTO<>(
-                                                true,
-                                                "Best ticket option found for passenger",
                                                 bestTicket));
         }
 }
