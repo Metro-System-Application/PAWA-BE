@@ -9,4 +9,7 @@ import java.util.UUID;
 @Repository
 public interface PassengerRepository extends CrudRepository<PassengerModel, UUID> {
     PassengerModel findPassengerModelByPassengerID(String passengerID);
+
+    // Add method to find passenger by email
+    PassengerModel findPassengerModelByEmail(String email);
 }
