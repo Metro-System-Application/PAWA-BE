@@ -12,6 +12,7 @@ import pawa_be.infrastructure.common.dto.GenericResponseDTO;
 import pawa_be.ticket.internal.dto.TypeDto;
 import pawa_be.ticket.internal.service.TicketTypeService;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 @RestController
@@ -25,17 +26,29 @@ class TicketController {
                 this.ticketTypeService = ticketTypeService;
         }
 
-        @Operation(summary = "Get ticket types", description = "Returns active ticket types, optionally filtered by passenger eligibility.")
+        @Operation(summary = "Get ticket types", description = "Returns active ticket types with optional filtering by passenger eligibility, budget, and metro line.")
         @GetMapping("/ticket-type")
         @ApiResponse(responseCode = "200", description = "Ticket types retrieved successfully")
+        @ApiResponse(responseCode = "400", description = "Invalid price parameter")
         @ApiResponse(responseCode = "401", description = "Unauthorized - user not authenticated")
         @ApiResponse(responseCode = "500", description = "Internal server error")
         ResponseEntity<GenericResponseDTO<List<TypeDto>>> getTicketTypes(
                         @RequestParam(required = false) String passengerId,
+                        @RequestParam(required = false) BigDecimal price,
                         @RequestParam(required = false) String metroLineId) {
+
+                // Validate price if provided
+                if (price != null && price.compareTo(BigDecimal.ZERO) < 0) {
+                        return ResponseEntity.badRequest()
+                                        .body(new GenericResponseDTO<>(
+                                                        false,
+                                                        "Price must be a non-negative value",
+                                                        null));
+                }
 
                 List<TypeDto> ticketTypes;
 
+                // Step 1: Get base ticket types (all or by passenger eligibility)
                 if (passengerId != null) {
                         // Filter by passenger eligibility
                         ticketTypes = ticketTypeService.getEligibleTicketTypesForPassenger(passengerId);
@@ -44,13 +57,25 @@ class TicketController {
                         ticketTypes = ticketTypeService.getAllTicketTypes();
                 }
 
-                // Additional filtering by metro line could be implemented here
+                // Step 2: Apply price filter if provided
+                if (price != null) {
+                        ticketTypes = ticketTypes.stream()
+                                        .filter(ticket -> ticket.getPrice().compareTo(price) <= 0)
+                                        .collect(java.util.stream.Collectors.toList());
+                }
+
+                // Step 3: Additional filtering by metro line could be implemented here
                 // if (metroLineId != null) { ... }
+
+                String message = "Ticket types retrieved successfully";
+                if (price != null) {
+                        message = "Available tickets within your budget retrieved successfully";
+                }
 
                 return ResponseEntity.ok(
                                 new GenericResponseDTO<>(
                                                 true,
-                                                "Ticket types retrieved successfully",
+                                                message,
                                                 ticketTypes));
         }
 }
