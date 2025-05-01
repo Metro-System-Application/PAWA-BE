@@ -3,6 +3,8 @@ package pawa_be.ticket.internal.service;
 import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import pawa_be.profile.internal.model.PassengerModel;
+import pawa_be.profile.internal.repository.PassengerRepository;
 import pawa_be.ticket.external.enumerator.TicketType;
 import pawa_be.ticket.internal.dto.TypeDto;
 import pawa_be.ticket.internal.model.TicketModel;
@@ -10,6 +12,8 @@ import pawa_be.ticket.internal.repository.TicketTypeRepository;
 
 import java.math.BigDecimal;
 import java.time.Duration;
+import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
@@ -20,6 +24,9 @@ public class TicketTypeService {
 
     @Autowired
     private TicketTypeRepository ticketTypeRepository;
+
+    @Autowired
+    private PassengerRepository passengerRepository;
 
     /**
      * Initializes default ticket types in the database if they don't exist.
@@ -151,6 +158,61 @@ public class TicketTypeService {
     }
 
     /**
+     * Get ticket types that a specific passenger is eligible for
+     * 
+     * @param passengerId The ID of the passenger to check eligibility for
+     * @return List of ticket types the passenger is eligible for
+     */
+    public List<TypeDto> getEligibleTicketTypesForPassenger(String passengerId) {
+        // Get passenger information
+        PassengerModel passenger = passengerRepository
+                .findPassengerModelByPassengerID(passengerId);
+
+        if (passenger == null) {
+            return getAllTicketTypes(); // Return all if passenger not found
+        }
+
+        // Get all active ticket types
+        List<TicketModel> allTicketTypes = ticketTypeRepository.findByActiveTrue();
+
+        // Filter based on eligibility
+        return allTicketTypes.stream()
+                .filter(ticketType -> isPassengerEligibleForTicket(passenger, ticketType))
+                .map(this::convertToDto)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Check if a passenger is eligible for a specific ticket type
+     */
+    private boolean isPassengerEligibleForTicket(PassengerModel passenger, TicketModel ticketType) {
+        TicketType type = ticketType.getTicketType();
+
+        // MONTHLY_STUDENT requires student ID
+        if (type == TicketType.MONTHLY_STUDENT) {
+            return passenger.getStudentID() != null && !passenger.getStudentID().isEmpty();
+        }
+
+        // FREE ticket is for seniors, children, disabled, or revolutionary contributors
+        if (type == TicketType.FREE) {
+            // Check age for senior citizens (60+)
+            boolean isSenior = ChronoUnit.YEARS.between(passenger.getPassengerDateOfBirth(), LocalDate.now()) >= 60;
+
+            // Check age for children under 6
+            boolean isChild = ChronoUnit.YEARS.between(passenger.getPassengerDateOfBirth(), LocalDate.now()) < 6;
+
+            // Check disability or revolutionary status
+            boolean hasSpecialStatus = Boolean.TRUE.equals(passenger.getHasDisability()) ||
+                    Boolean.TRUE.equals(passenger.getIsRevolutionary());
+
+            return isSenior || isChild || hasSpecialStatus;
+        }
+
+        // All other ticket types are available to everyone
+        return true;
+    }
+
+    /**
      * Convert ticket type database entity to DTO
      */
     private TypeDto convertToDto(TicketModel model) {
@@ -160,7 +222,7 @@ public class TicketTypeService {
         dto.setPrice(model.getPrice());
         dto.setExpiryDescription(model.getExpiryDescription());
         dto.setRequirementDescription(model.getEligibilityRequirements());
-        dto.setExpiryInterval(getExpiryIntervalAsDuration(model));
+        dto.setExpiryInterval(model.getExpiryInterval());
         dto.setActive(model.getActive());
         return dto;
     }
