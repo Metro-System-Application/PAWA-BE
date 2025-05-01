@@ -88,12 +88,18 @@ public class PassengerService {
         }
 
         bucketService.uploadFile(fileKey, file);
-        ImagesModel image = existingImage != null ? existingImage : new ImagesModel();
+
+        ImagesModel image;
+        if (existingImage != null) {
+            image = existingImage;
+        } else {
+            image = new ImagesModel();
+            image.setPassengerModel(passenger);
+        }
 
         image.setImageType(requestUploadImageDTO.getImageType());
         image.setImageURL(fileKey);
         image.setMimeType(contentType);
-        image.setPassengerModel(passenger);
 
         imagesRepository.save(image);
     }

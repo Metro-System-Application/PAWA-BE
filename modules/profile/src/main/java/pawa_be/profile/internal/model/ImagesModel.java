@@ -27,7 +27,7 @@ public class ImagesModel {
     @Enumerated(EnumType.STRING)
     private ImageType imageType;
 
-    @OneToOne
+    @ManyToOne
     @JoinColumn(name = "passenger_id", referencedColumnName = "passengerID", nullable = false, updatable = false)
     private PassengerModel passengerModel;
 
