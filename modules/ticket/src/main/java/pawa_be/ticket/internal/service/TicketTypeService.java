@@ -4,8 +4,6 @@ import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
@@ -20,16 +18,6 @@ import pawa_be.ticket.external.enumerator.TicketType;
 import pawa_be.ticket.internal.dto.TypeDto;
 import pawa_be.ticket.internal.model.TicketModel;
 import pawa_be.ticket.internal.repository.TicketTypeRepository;
-
-import java.math.BigDecimal;
-import java.time.Duration;
-import java.time.LocalDate;
-import java.time.temporal.ChronoUnit;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Optional;
-import java.util.stream.Collectors;
 
 @Service
 public class TicketTypeService {
@@ -176,15 +164,13 @@ public class TicketTypeService {
      * @return List of ticket types the passenger is eligible for
      */
     public List<TypeDto> getEligibleTicketTypesForPassenger(String passengerId) {
-        // Get passenger information
         PassengerModel passenger = passengerRepository
                 .findPassengerModelByPassengerID(passengerId);
 
         if (passenger == null) {
-            return getAllTicketTypes(); // Return all if passenger not found
+            return getAllTicketTypes();
         }
 
-        // Get all active ticket types
         List<TicketModel> allTicketTypes = ticketTypeRepository.findByActiveTrue();
 
         // Filter based on eligibility
@@ -195,17 +181,17 @@ public class TicketTypeService {
     }
 
     /**
-     * Get ticket types that a specific passenger is eligible for using their email
+     * Get ticket types that a specific passenger is eligible for using their phone
+     * number
      * 
-     * @param email The email of the passenger to check eligibility for
+     * @param phone The phone number of the passenger to check eligibility for
      * @return List of ticket types the passenger is eligible for
      */
-    public List<TypeDto> getEligibleTicketTypesForPassengerByEmail(String email) {
-        // Get passenger information by email
-        PassengerModel passenger = passengerRepository.findPassengerModelByEmail(email);
+    public List<TypeDto> getEligibleTicketTypesForPassengerByPhone(String phone) {
+        PassengerModel passenger = passengerRepository.findPassengerModelByPassengerPhone(phone);
 
         if (passenger == null) {
-            return getAllTicketTypes(); // Return all if passenger not found
+            return getAllTicketTypes();
         }
 
         // Get all active ticket types
@@ -400,13 +386,14 @@ public class TicketTypeService {
     }
 
     /**
-     * Get the best ticket type a passenger is eligible for based on their email
+     * Get the best ticket type a passenger is eligible for based on their phone
+     * number
      * 
-     * @param email The email of the passenger to check eligibility for
+     * @param phone The phone number of the passenger to check eligibility for
      * @return The best ticket type option for the passenger, or null if none found
      */
-    public TypeDto getBestTicketForPassengerByEmail(String email) {
-        List<TypeDto> eligibleTickets = getEligibleTicketTypesForPassengerByEmail(email);
+    public TypeDto getBestTicketForPassengerByPhone(String phone) {
+        List<TypeDto> eligibleTickets = getEligibleTicketTypesForPassengerByPhone(phone);
 
         if (eligibleTickets.isEmpty()) {
             return null;
