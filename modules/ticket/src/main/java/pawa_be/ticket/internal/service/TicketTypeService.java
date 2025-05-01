@@ -233,4 +233,22 @@ public class TicketTypeService {
     public Duration getExpiryIntervalAsDuration(TicketModel model) {
         return Duration.ofHours(model.getExpiryHours());
     }
+
+    /**
+     * Get ticket types that can be purchased with the given amount
+     * 
+     * @param price The maximum price the user can spend
+     * @return List of ticket types that cost less than or equal to the given price
+     */
+    public List<TypeDto> getTicketsByPrice(BigDecimal price) {
+        if (price == null) {
+            return getAllTicketTypes();
+        }
+
+        return ticketTypeRepository.findByActiveTrue()
+                .stream()
+                .filter(ticket -> ticket.getPrice().compareTo(price) <= 0)
+                .map(this::convertToDto)
+                .collect(Collectors.toList());
+    }
 }
