@@ -99,4 +99,100 @@ class TicketController {
                                                 message,
                                                 ticketTypes));
         }
+
+        @Operation(summary = "Get best ticket type for passenger", description = "Returns the most advantageous ticket type for a specific passenger based on eligibility (free tickets prioritized)")
+        @GetMapping("/best-ticket")
+        @ApiResponse(responseCode = "200", description = "Best ticket option retrieved successfully")
+        @ApiResponse(responseCode = "404", description = "No eligible tickets found")
+        @ApiResponse(responseCode = "400", description = "Missing required passenger ID")
+        ResponseEntity<GenericResponseDTO<TypeDto>> getBestTicketForPassenger(
+                        @RequestParam String passengerId) {
+
+                if (passengerId == null || passengerId.trim().isEmpty()) {
+                        return ResponseEntity.badRequest()
+                                        .body(new GenericResponseDTO<>(
+                                                        false,
+                                                        "Passenger ID is required",
+                                                        null));
+                }
+
+                TypeDto bestTicket = ticketTypeService.getBestTicketForPassenger(passengerId);
+
+                if (bestTicket == null) {
+                        return ResponseEntity.status(404)
+                                        .body(new GenericResponseDTO<>(
+                                                        false,
+                                                        "No eligible tickets found for this passenger",
+                                                        null));
+                }
+
+                return ResponseEntity.ok(
+                                new GenericResponseDTO<>(
+                                                true,
+                                                "Best ticket option found for passenger",
+                                                bestTicket));
+        }
+
+        @Operation(summary = "Get best ticket type by attributes", description = "Returns the best ticket type available based on specific passenger attributes")
+        @GetMapping("/eligible-ticket")
+        @ApiResponse(responseCode = "200", description = "Best eligible ticket found")
+        @ApiResponse(responseCode = "404", description = "No eligible special ticket found")
+        ResponseEntity<GenericResponseDTO<TypeDto>> getBestTicketByAttributes(
+                        @RequestParam(required = false) Boolean isRevolutionary,
+                        @RequestParam(required = false) Boolean hasDisability,
+                        @RequestParam(required = false) Integer age,
+                        @RequestParam(required = false) String studentId) {
+
+                // Build message based on provided attributes
+                StringBuilder attributeMessage = new StringBuilder("Based on attributes: ");
+                boolean hasAttributes = false;
+
+                if (Boolean.TRUE.equals(isRevolutionary)) {
+                        attributeMessage.append("revolutionary status, ");
+                        hasAttributes = true;
+                }
+
+                if (Boolean.TRUE.equals(hasDisability)) {
+                        attributeMessage.append("disability status, ");
+                        hasAttributes = true;
+                }
+
+                if (age != null) {
+                        attributeMessage.append("age " + age + ", ");
+                        hasAttributes = true;
+                }
+
+                if (studentId != null && !studentId.trim().isEmpty()) {
+                        attributeMessage.append("student status, ");
+                        hasAttributes = true;
+                }
+
+                // Check if any attributes were provided
+                if (!hasAttributes) {
+                        return ResponseEntity.ok(
+                                        new GenericResponseDTO<>(
+                                                        true,
+                                                        "No special eligibility attributes provided, showing standard ticket options",
+                                                        null));
+                }
+
+                // Get the best ticket based on the attributes
+                TypeDto bestTicket = ticketTypeService.getBestTicketByAttributes(
+                                isRevolutionary, hasDisability, age, studentId);
+
+                if (bestTicket == null) {
+                        return ResponseEntity.status(404)
+                                        .body(new GenericResponseDTO<>(
+                                                        false,
+                                                        "No specific ticket available for the provided attributes",
+                                                        null));
+                }
+
+                return ResponseEntity.ok(
+                                new GenericResponseDTO<>(
+                                                true,
+                                                attributeMessage.toString() + "the best ticket option is: "
+                                                                + bestTicket.getTypeName(),
+                                                bestTicket));
+        }
 }

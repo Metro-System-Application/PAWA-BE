@@ -1,5 +1,16 @@
 package pawa_be.ticket.internal.service;
 
+import java.math.BigDecimal;
+import java.time.Duration;
+import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
+
 import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -14,7 +25,8 @@ import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
-import java.util.Arrays;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -250,5 +262,116 @@ public class TicketTypeService {
                 .filter(ticket -> ticket.getPrice().compareTo(price) <= 0)
                 .map(this::convertToDto)
                 .collect(Collectors.toList());
+    }
+
+    /**
+     * Get the best ticket type a passenger is eligible for, prioritizing:
+     * 1. Free tickets
+     * 2. Tickets with longer validity periods
+     * 3. Tickets with lower prices
+     * 
+     * @param passengerId The ID of the passenger to check eligibility for
+     * @return The best ticket type option for the passenger, or null if none found
+     */
+    public TypeDto getBestTicketForPassenger(String passengerId) {
+        List<TypeDto> eligibleTickets = getEligibleTicketTypesForPassenger(passengerId);
+
+        if (eligibleTickets.isEmpty()) {
+            return null;
+        }
+
+        // First check for FREE tickets - highest priority
+        List<TypeDto> freeTickets = eligibleTickets.stream()
+                .filter(ticket -> ticket.getPrice().compareTo(BigDecimal.ZERO) == 0)
+                .collect(Collectors.toList());
+
+        if (!freeTickets.isEmpty()) {
+            // If multiple free tickets, get the one with longest validity
+            return freeTickets.stream()
+                    .max(Comparator.comparing(ticket -> ticket.getExpiryInterval().toHours()))
+                    .orElse(freeTickets.get(0));
+        }
+
+        // Otherwise, prioritize by value (most hours per unit cost)
+        return eligibleTickets.stream()
+                .max(Comparator.comparing(ticket -> {
+                    // Avoid division by zero
+                    if (ticket.getPrice().compareTo(BigDecimal.ZERO) == 0) {
+                        return Double.MAX_VALUE; // Free tickets are highest value
+                    }
+                    // Calculate value ratio: hours per cost unit
+                    return ticket.getExpiryInterval().toHours() / ticket.getPrice().doubleValue();
+                }))
+                .orElse(eligibleTickets.get(0));
+    }
+
+    /**
+     * Get the best ticket type based on specific passenger attributes
+     * rather than requiring a full passenger object.
+     * 
+     * @param isRevolutionary Whether the passenger has revolutionary status
+     * @param hasDisability   Whether the passenger has disability status
+     * @param age             The age of the passenger
+     * @param studentId       The student ID of the passenger (if a student)
+     * @return The best ticket type option based on the attributes, or null if none
+     *         found
+     */
+    public TypeDto getBestTicketByAttributes(
+            Boolean isRevolutionary,
+            Boolean hasDisability,
+            Integer age,
+            String studentId) {
+
+        // Get all active ticket types
+        List<TicketModel> allTicketTypes = ticketTypeRepository.findByActiveTrue();
+
+        // Check for FREE ticket eligibility (seniors, children, disability,
+        // revolutionary)
+        boolean eligibleForFree = Boolean.TRUE.equals(isRevolutionary) ||
+                Boolean.TRUE.equals(hasDisability) ||
+                (age != null && (age >= 60 || age < 6));
+
+        if (eligibleForFree) {
+            // Find FREE ticket
+            Optional<TicketModel> freeTicket = allTicketTypes.stream()
+                    .filter(ticket -> ticket.getTicketType() == TicketType.FREE)
+                    .findFirst();
+
+            if (freeTicket.isPresent()) {
+                return convertToDto(freeTicket.get());
+            }
+        }
+
+        // Check for student ticket eligibility
+        boolean isStudent = studentId != null && !studentId.trim().isEmpty();
+        if (isStudent) {
+            // Find MONTHLY_STUDENT ticket
+            Optional<TicketModel> studentTicket = allTicketTypes.stream()
+                    .filter(ticket -> ticket.getTicketType() == TicketType.MONTHLY_STUDENT)
+                    .findFirst();
+
+            if (studentTicket.isPresent()) {
+                return convertToDto(studentTicket.get());
+            }
+        }
+
+        // If no special ticket is applicable, find the best general ticket based on
+        // value
+        // (which will typically be MONTHLY_ADULT for long-term use)
+        return allTicketTypes.stream()
+                .filter(ticket -> {
+                    TicketType type = ticket.getTicketType();
+                    return type != TicketType.FREE &&
+                            type != TicketType.MONTHLY_STUDENT;
+                })
+                .map(this::convertToDto)
+                .max(Comparator.comparing(ticket -> {
+                    // Calculate value ratio: hours per cost unit
+                    if (ticket.getPrice().compareTo(BigDecimal.ZERO) == 0) {
+                        return Double.MAX_VALUE; // Free tickets are highest value
+                    }
+                    return ticket.getExpiryInterval().toHours() / ticket.getPrice().doubleValue();
+                }))
+                .orElse(null);
     }
 }
