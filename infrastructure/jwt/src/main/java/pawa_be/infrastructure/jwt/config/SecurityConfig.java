@@ -42,7 +42,7 @@ public class SecurityConfig {
                         .requestMatchers("/auth/update-my-info").authenticated()
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
                         .requestMatchers("/profile/**").authenticated()
-                        .requestMatchers("/ticket/ticket-type").permitAll()
+                        .requestMatchers("/ticket/*").permitAll()
                         .requestMatchers("/payment/purchase-ticket/**").permitAll()
                         .requestMatchers("/payment/top-up-balance").authenticated()
                         .anyRequest().authenticated()
