@@ -1,74 +1,15 @@
 package pawa_be.ticket.external.enumerator;
 
-import lombok.Getter;
-
-import java.math.BigDecimal;
-import java.time.Duration;
-import java.time.LocalTime;
-
-@Getter
+/**
+ * Ticket type codes only - all properties are now stored in the database
+ */
 public enum TicketType {
-    ONE_WAY_4 (
-            "One-way ticket (Up to 4 stations)",
-            new BigDecimal(8000),
-            Duration.ofHours(24),
-            "Valid for up to 4 stations",
-            "Available for everyone"),
-    ONE_WAY_8 (
-            "One-way ticket (Up to 8 stations)",
-            new BigDecimal(12000),
-            Duration.ofHours(24),
-            "Valid for up to 8 stations",
-            "Available for everyone"),
-    ONE_WAY_X (
-            "One-way ticket (More than 8 stations)",
-            new BigDecimal(8000),
-            Duration.ofHours(24),
-            "Valid for more than 8 stations",
-            "Available for everyone"),
-    DAILY (
-            "Daily ticket",
-            new BigDecimal(40000),
-            Duration.ofHours(24),
-            "Valid for up to 24 hours after activation",
-            "Available for everyone"),
-    THREE_DAY (
-            "Three-day ticket",
-            new BigDecimal(90000),
-            Duration.ofHours(72),
-            "Valid for up to 72 hours after activation",
-            "Available for everyone"),
-    MONTHLY_STUDENT (
-            "Monthly student ticket",
-            new BigDecimal(150000),
-            Duration.ofDays(30),
-            "Valid for 30 days after activation",
-            "Available only if the passenger provided a student ID during registration"),
-    MONTHLY_ADULT (
-            "Monthly adult ticket",
-            new BigDecimal(300000),
-            Duration.ofDays(30),
-            "Valid for 30 days after activation",
-            "Available for everyone"),
-    FREE (
-            "Free ticket",
-            new BigDecimal(0),
-            Duration.ofDays(30),
-            "Valid for 30 days after activation",
-            "Available for passengers aged 60 and older, or children under 6. Including people with disabilities or revolutionary contributions");
-
-    private final String displayedName;
-    private final BigDecimal price;
-    private final Duration expiryInterval;
-    private final String expiryDescription;
-    private final String eligibilityRequirements;
-    TicketType(String displayedName, BigDecimal price, Duration expiryInterval, String expiryDescription, String requirementDescription){
-        this.displayedName = displayedName;
-        this.price = price;
-        this.expiryInterval = expiryInterval;
-        this.expiryDescription = expiryDescription;
-        this.eligibilityRequirements = requirementDescription;
-    }
-
-
+        ONE_WAY_4,
+        ONE_WAY_8,
+        ONE_WAY_X,
+        DAILY,
+        THREE_DAY,
+        MONTHLY_STUDENT,
+        MONTHLY_ADULT,
+        FREE
 }

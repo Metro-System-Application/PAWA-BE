@@ -11,7 +11,7 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Entity
-@Table(name="cart_item")
+@Table(name = "cart_item")
 @Data
 public class CartItemModel {
     @Id
@@ -35,10 +35,10 @@ public class CartItemModel {
     private LocalDateTime updatedAt;
 
     @ManyToOne
-    @JoinColumn(name="cart_id", referencedColumnName = "cartID", nullable = false, insertable = false, updatable = false)
+    @JoinColumn(name = "cart_id", referencedColumnName = "cartID", nullable = false, insertable = false, updatable = false)
     private CartModel cart;
 
     @ManyToOne
-    @JoinColumn(name = "type_id", referencedColumnName = "id", nullable = false, insertable = false, updatable = false)
+    @JoinColumn(name = "ticket_type_code", referencedColumnName = "ticket_type_code", nullable = false)
     private TicketModel type;
 }
