@@ -80,14 +80,16 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
     }
 
-    @ExceptionHandler(NotFoundException.class)
-    public ResponseEntity<GenericResponseDTO<?>> handleNotFoundException(NotFoundException ex) {
+    @ExceptionHandler({ NotFoundException.class, IllegalArgumentException.class })
+    public ResponseEntity<GenericResponseDTO<?>> handleCommonExceptions(RuntimeException ex) {
+        HttpStatus status = (ex instanceof NotFoundException) ? HttpStatus.NOT_FOUND : HttpStatus.BAD_REQUEST;
+
         GenericResponseDTO<Map<String, String>> response = new GenericResponseDTO<>(
                 false,
                 ex.getMessage(),
                 null
         );
 
-        return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
+        return new ResponseEntity<>(response, status);
     }
 }

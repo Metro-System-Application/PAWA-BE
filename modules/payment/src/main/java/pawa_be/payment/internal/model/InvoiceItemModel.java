@@ -18,7 +18,7 @@ public class InvoiceItemModel {
     private UUID invoiceItemID;
 
     @ManyToOne
-    @JoinColumn(name="invoice_id", referencedColumnName = "invoiceID", nullable = false, insertable = false, updatable = false)
+    @JoinColumn(name="invoice_id", referencedColumnName = "invoiceID", nullable = false, updatable = false)
     private InvoiceModel invoiceModel;
 
     @Column(nullable = false)

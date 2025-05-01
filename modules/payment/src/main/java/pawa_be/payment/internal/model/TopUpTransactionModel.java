@@ -18,6 +18,6 @@ public class TopUpTransactionModel {
     private BigDecimal amount;
 
     @ManyToOne
-    @JoinColumn(name = "ewallet_id", referencedColumnName = "walletID", nullable = false, insertable = false, updatable = false)
+    @JoinColumn(name = "ewallet_id", referencedColumnName = "walletID", nullable = false, updatable = false)
     private EwalletModel ewallet;
 }
