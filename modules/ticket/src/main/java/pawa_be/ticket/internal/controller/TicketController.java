@@ -26,15 +26,16 @@ class TicketController {
                 this.ticketTypeService = ticketTypeService;
         }
 
-        @Operation(summary = "Get ticket types", description = "Returns active ticket types with optional filtering by passenger eligibility, budget, and metro line.")
+        @Operation(summary = "Get ticket types", description = "Returns active ticket types with optional filtering by passenger eligibility, budget, expiry time, and metro line.")
         @GetMapping("/ticket-type")
         @ApiResponse(responseCode = "200", description = "Ticket types retrieved successfully")
-        @ApiResponse(responseCode = "400", description = "Invalid price parameter")
+        @ApiResponse(responseCode = "400", description = "Invalid parameter")
         @ApiResponse(responseCode = "401", description = "Unauthorized - user not authenticated")
         @ApiResponse(responseCode = "500", description = "Internal server error")
         ResponseEntity<GenericResponseDTO<List<TypeDto>>> getTicketTypes(
                         @RequestParam(required = false) String passengerId,
                         @RequestParam(required = false) BigDecimal price,
+                        @RequestParam(required = false) Long expiryHours,
                         @RequestParam(required = false) String metroLineId) {
 
                 // Validate price if provided
@@ -43,6 +44,15 @@ class TicketController {
                                         .body(new GenericResponseDTO<>(
                                                         false,
                                                         "Price must be a non-negative value",
+                                                        null));
+                }
+
+                // Validate expiryHours if provided
+                if (expiryHours != null && expiryHours <= 0) {
+                        return ResponseEntity.badRequest()
+                                        .body(new GenericResponseDTO<>(
+                                                        false,
+                                                        "Expiry hours must be a positive value",
                                                         null));
                 }
 
@@ -64,12 +74,23 @@ class TicketController {
                                         .collect(java.util.stream.Collectors.toList());
                 }
 
-                // Step 3: Additional filtering by metro line could be implemented here
+                // Step 3: Apply expiry hours filter if provided
+                if (expiryHours != null) {
+                        ticketTypes = ticketTypes.stream()
+                                        .filter(ticket -> ticket.getExpiryInterval().toHours() <= expiryHours)
+                                        .collect(java.util.stream.Collectors.toList());
+                }
+
+                // Step 4: Additional filtering by metro line could be implemented here
                 // if (metroLineId != null) { ... }
 
                 String message = "Ticket types retrieved successfully";
-                if (price != null) {
+                if (price != null && expiryHours != null) {
+                        message = "Available tickets within your budget and timeframe retrieved successfully";
+                } else if (price != null) {
                         message = "Available tickets within your budget retrieved successfully";
+                } else if (expiryHours != null) {
+                        message = "Available tickets with your desired expiry time retrieved successfully";
                 }
 
                 return ResponseEntity.ok(
