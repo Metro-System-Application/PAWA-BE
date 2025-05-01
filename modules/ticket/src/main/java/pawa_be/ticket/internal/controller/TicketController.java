@@ -39,7 +39,6 @@ class TicketController {
                         @RequestParam(required = false) Long expiryHours,
                         @RequestParam(required = false) String metroLineId) {
 
-                // Validate price if provided
                 if (price != null && price.compareTo(BigDecimal.ZERO) < 0) {
                         return ResponseEntity.badRequest()
                                         .body(new GenericResponseDTO<>(
@@ -48,7 +47,6 @@ class TicketController {
                                                         null));
                 }
 
-                // Validate expiryHours if provided
                 if (expiryHours != null && expiryHours <= 0) {
                         return ResponseEntity.badRequest()
                                         .body(new GenericResponseDTO<>(
@@ -59,33 +57,27 @@ class TicketController {
 
                 List<TypeDto> ticketTypes;
 
-                // Step 1: Get base ticket types (all or by passenger eligibility)
                 if (passengerId != null) {
-                        // Filter by passenger eligibility using ID
                         ticketTypes = ticketTypeService.getEligibleTicketTypesForPassenger(passengerId);
                 } else if (phone != null && !phone.trim().isEmpty()) {
-                        // Filter by passenger eligibility using phone
                         ticketTypes = ticketTypeService.getEligibleTicketTypesForPassengerByPhone(phone);
                 } else {
-                        // Get all active ticket types
                         ticketTypes = ticketTypeService.getAllTicketTypes();
                 }
 
-                // Step 2: Apply price filter if provided
                 if (price != null) {
                         ticketTypes = ticketTypes.stream()
                                         .filter(ticket -> ticket.getPrice().compareTo(price) <= 0)
                                         .collect(java.util.stream.Collectors.toList());
                 }
 
-                // Step 3: Apply expiry hours filter if provided
                 if (expiryHours != null) {
                         ticketTypes = ticketTypes.stream()
                                         .filter(ticket -> ticket.getExpiryInterval().toHours() <= expiryHours)
                                         .collect(java.util.stream.Collectors.toList());
                 }
 
-                // Step 4: Additional filtering by metro line could be implemented here
+                // Additional filtering by metro line could be implemented here
                 // if (metroLineId != null) { ... }
 
                 String message = "Ticket types retrieved successfully";
@@ -125,7 +117,6 @@ class TicketController {
 
                 TypeDto bestTicket = null;
 
-                // Prioritize passengerId if both are provided
                 if (passengerId != null && !passengerId.trim().isEmpty()) {
                         bestTicket = ticketTypeService.getBestTicketForPassenger(passengerId);
                 } else {
