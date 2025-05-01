@@ -86,7 +86,17 @@ class PassengerController {
             description = "Uploads or updates the profile picture for the authenticated passenger."
     )
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Profile image uploaded successfully", content = @Content(schema = @Schema(implementation = GenericResponseDTO.class))),
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Profile image uploaded successfully",
+                    content = @Content(schema = @Schema(implementation = GenericResponseDTO.class, example = """
+                        {
+                            "success": true,
+                            "message": "Profile image uploaded",
+                            "data": null
+                        }
+                    """))
+            ),
             @ApiResponse(responseCode = "400", description = "Bad request - missing or invalid input", content = @Content),
             @ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content),
             @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content)
@@ -106,6 +116,22 @@ class PassengerController {
     }
 
     @PostMapping(value = "/upload-card-images", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @ApiResponses(value = {
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Card images uploaded successfully",
+                    content = @Content(schema = @Schema(implementation = GenericResponseDTO.class, example = """
+                    {
+                        "success": true,
+                        "message": "Card images uploaded successfully",
+                        "data": null
+                    }
+                """))
+            ),
+            @ApiResponse(responseCode = "400", description = "Bad request - missing or invalid input", content = @Content),
+            @ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content),
+            @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content)
+    })
     @Operation(summary = "Upload both front and back of a card (STUDENT_ID or NATIONAL_ID)")
     ResponseEntity<GenericResponseDTO<?>> uploadCardImages(
             @Parameter(hidden = true) Authentication authentication,
@@ -133,8 +159,23 @@ class PassengerController {
     @GetMapping("/profile-image")
     @Operation(summary = "Get profile image", description = "Returns the base64-encoded profile picture for the logged-in passenger")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Profile image retrieved successfully",
-                    content = @Content(schema = @Schema(implementation = GenericResponseDTO.class))),
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Profile image retrieved successfully",
+                    content = @Content(schema = @Schema(implementation = GenericResponseDTO.class, example = """
+                        {
+                            "success": true,
+                            "message": "Profile image retrieved",
+                            "data": {
+                                "profileImage": {
+                                    "base64": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAA...",
+                                    "mimeType": "image/png",
+                                    "imageType": "USER_PROFILE"
+                                }
+                            }
+                        }
+                    """))
+            ),
             @ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content),
             @ApiResponse(responseCode = "404", description = "Profile image not found", content = @Content),
             @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content)
@@ -152,8 +193,42 @@ class PassengerController {
     @GetMapping("/card-images")
     @Operation(summary = "Get card images", description = "Returns the base64-encoded student ID and national ID images for the logged-in passenger")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Card images retrieved successfully",
-                    content = @Content(schema = @Schema(implementation = GenericResponseDTO.class))),
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Card images retrieved successfully",
+                    content = @Content(schema = @Schema(implementation = GenericResponseDTO.class, example = """
+                        {
+                            "success": true,
+                            "message": "Card images retrieved",
+                            "data": {
+                                "studentIdPictures": [
+                                    {
+                                        "base64": "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD...",
+                                        "mimeType": "image/jpeg",
+                                        "imageType": "STUDENT_ID_FRONT"
+                                    },
+                                    {
+                                        "base64": "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD...",
+                                        "mimeType": "image/jpeg",
+                                        "imageType": "STUDENT_ID_BACK"
+                                    }
+                                ],
+                                "nationalIdPictures": [
+                                    {
+                                        "base64": "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD...",
+                                        "mimeType": "image/jpeg",
+                                        "imageType": "NATIONAL_ID_FRONT"
+                                    },
+                                    {
+                                        "base64": "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD...",
+                                        "mimeType": "image/jpeg",
+                                        "imageType": "NATIONAL_ID_BACK"
+                                    }
+                                ]
+                            }
+                        }
+                    """))
+            ),
             @ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content),
             @ApiResponse(responseCode = "404", description = "One or more card images not found", content = @Content),
             @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content)
