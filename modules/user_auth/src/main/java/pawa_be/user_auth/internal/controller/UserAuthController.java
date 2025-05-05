@@ -133,9 +133,9 @@ class UserAuthController {
                     )
             )
     })
-    @PostMapping("/validate-login-data")
-    ResponseEntity<GenericResponseDTO<?>> validateLoginData(@Valid @RequestBody RequestValidateUserLoginDataDTO requestValidateUserLoginDataDTO) {
-        boolean emailExists = userAuthService.existsByEmail(requestValidateUserLoginDataDTO.getEmail());
+    @GetMapping("/validate-existing-email")
+    ResponseEntity<GenericResponseDTO<?>> validateLoginData(@Valid @RequestParam String email) {
+        boolean emailExists = userAuthService.existsByEmail(email);
         return ResponseEntity
                 .status(emailExists ? HttpStatus.CONFLICT : HttpStatus.OK)
                 .body(new GenericResponseDTO<>(
