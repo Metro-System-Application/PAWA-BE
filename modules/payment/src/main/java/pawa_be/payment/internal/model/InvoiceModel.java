@@ -19,7 +19,7 @@ public class InvoiceModel {
     private UUID invoiceID;
 
     @ManyToOne
-    @JoinColumn(name="passenger_id", referencedColumnName = "passengerID", nullable = false, insertable = false, updatable = false)
+    @JoinColumn(name="passenger_id", referencedColumnName = "passengerID", nullable = false, updatable = false)
     private PassengerModel passengerModel;
 
     @Column(nullable = false)

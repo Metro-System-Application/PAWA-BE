@@ -17,13 +17,18 @@ public class ImagesModel {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID imageID;
 
+    @Column(nullable = false)
     private String imageURL;
 
+    @Column(nullable = false)
+    private String mimeType;
+
+    @Column(nullable = false)
     @Enumerated(EnumType.STRING)
     private ImageType imageType;
 
-    @OneToOne
-    @JoinColumn(name = "passenger_id", referencedColumnName = "passengerID", nullable = false, insertable = false, updatable = false)
+    @ManyToOne
+    @JoinColumn(name = "passenger_id", referencedColumnName = "passengerID", nullable = false, updatable = false)
     private PassengerModel passengerModel;
 
     @CreationTimestamp
@@ -32,6 +37,4 @@ public class ImagesModel {
 
     @UpdateTimestamp
     private LocalDateTime updatedAt;
-
-
 }

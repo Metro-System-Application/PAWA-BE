@@ -18,7 +18,7 @@ public class CartModel {
     private UUID cartID;
 
     @OneToOne
-    @JoinColumn(name="passenger_id", referencedColumnName = "passengerID", nullable = false, insertable = false, updatable = false)
+    @JoinColumn(name="passenger_id", referencedColumnName = "passengerID", nullable = false, updatable = false)
     private PassengerModel passengerModel;
 
     @CreationTimestamp
