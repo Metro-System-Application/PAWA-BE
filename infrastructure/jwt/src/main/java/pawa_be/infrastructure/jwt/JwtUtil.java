@@ -47,6 +47,47 @@ public class JwtUtil {
         }
     }
 
+    public String generateTempTokenForGoogle(String googleId) {
+        try {
+            PrivateKey privateKey = keyStoreManager.getPrivateKey();
+            int TEMP_TOKEN_VALIDITY = 15 * 60; // 15 minutes in seconds
+
+            Map<String, Object> claims = new HashMap<>();
+            claims.put("googleId", googleId);
+            claims.put("type", "temp");
+
+            return Jwts.builder()
+                    .claims(claims)
+                    .subject(googleId)
+                    .issuer("PAWA Backend")
+                    .issuedAt(new Date(System.currentTimeMillis()))
+                    .expiration(Date.from(Instant.now().plusSeconds(TEMP_TOKEN_VALIDITY)))
+                    .signWith(privateKey, Jwts.SIG.RS256)
+                    .compact();
+        } catch (Exception e) {
+            throw new RuntimeException("Error while signing temporary JWT", e);
+        }
+    }
+
+    public String validateAndExtractGoogleIdFromTempToken(String token) {
+        try {
+            Claims claims = extractAllClaims(token);
+            String type = (String) claims.get("type");
+
+            if (!"temp".equals(type)) {
+                throw new IllegalArgumentException("Token is not a temporary Google token");
+            }
+
+            if (isTokenExpired(token)) {
+                throw new IllegalArgumentException("Temporary token has expired");
+            }
+
+            return claims.getSubject();
+        } catch (Exception e) {
+            throw new IllegalArgumentException("Invalid temporary token", e);
+        }
+    }
+
     private JwtParser loadJwtParser() {
         try {
             PublicKey publicKey = keyStoreManager.getPublicKey();
@@ -80,12 +121,11 @@ public class JwtUtil {
     }
 
     private boolean isTokenExpired(String token) {
-        return extractExpiration(token).before(new Date());
+        return extractExpiration(token).before(new Date(System.currentTimeMillis()));
     }
 
     public boolean verifyJwtSignature(String token) {
         JwtParser parser = loadJwtParser();
         return parser.isSigned(token) && !isTokenExpired(token);
-
     }
 }

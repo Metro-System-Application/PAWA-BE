@@ -1,6 +1,8 @@
 package pawa_be.user_auth.internal.controller;
 
+import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -8,7 +10,6 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
-import jakarta.validation.executable.ValidateOnExecution;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -16,8 +17,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
@@ -27,20 +26,28 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
 import pawa_be.infrastructure.common.dto.GenericResponseDTO;
+import pawa_be.infrastructure.google_oauth.service.IGoogleOAuthService;
 import pawa_be.infrastructure.jwt.JwtUtil;
 import pawa_be.infrastructure.jwt.config.HttpOnlyCookieConfig;
 import pawa_be.infrastructure.jwt.config.UserAuthConfig;
 import pawa_be.infrastructure.jwt.config.UserRoleConfig;
 import pawa_be.infrastructure.jwt.user_details.CustomUserDetails;
 import pawa_be.payment.external.service.IExternalPaymentService;
+import pawa_be.profile.external.dto.RequestRegisterPassengerDTO;
+import pawa_be.profile.external.dto.ResponsePassengerDTO;
 import pawa_be.profile.external.service.IExternalPassengerService;
+import pawa_be.user_auth.internal.dto.RequestGoogleProfileDataDTO;
 import pawa_be.profile.internal.model.PassengerModel;
 import pawa_be.user_auth.internal.dto.*;
 import pawa_be.user_auth.internal.enumeration.UpdateUserResult;
 import pawa_be.user_auth.internal.model.UserAuthModel;
 import pawa_be.user_auth.internal.service.UserAuthService;
 
+import java.io.IOException;
+import java.util.Map;
 import java.util.Optional;
+
+import static pawa_be.infrastructure.jwt.misc.Miscellaneous.getUserIdFromAuthentication;
 
 @Validated
 @RestController
@@ -63,6 +70,12 @@ class UserAuthController {
 
     @Autowired
     private IExternalPaymentService externalPaymentService;
+
+    @Autowired
+    private IGoogleOAuthService googleOAuthService;
+
+    @Autowired
+    private JwtUtil jwtUtil;
 
     private String getLoginToken(String username, String password) {
         UsernamePasswordAuthenticationToken credentialToken
@@ -199,7 +212,7 @@ class UserAuthController {
                     .body(new GenericResponseDTO<>(false, "User with this email already exists.", null));
         }
 
-        UserAuthModel userWithHashedPassword = new UserAuthModel(
+        UserAuthModel userWithHashedPassword = UserAuthModel.fromPassword(
                 user.getEmail(),
                 passwordEncoder.encode(user.getPassword())
         );
@@ -208,7 +221,6 @@ class UserAuthController {
 
         PassengerModel newPassenger = externalPassengerService.registerPassenger(
                 newUser.getUserId(),
-                newUser.getEmail(),
                 user.getPassengerData()
         );
 
@@ -311,6 +323,111 @@ class UserAuthController {
         return ResponseEntity
                 .status(HttpStatus.BAD_REQUEST)
                 .body(new GenericResponseDTO<>(false, "Error when updating info", null));
+    }
+
+    @GetMapping("/google-signup-url")
+    ResponseEntity<GenericResponseDTO<?>> getRedirectLoginUrl() {
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .body(new GenericResponseDTO<>(true, "", new ResponseGetRedirectLoginUrlDTO(
+                        googleOAuthService.buildLoginUrl()
+                )));
+    }
+
+    @GetMapping("/google")
+    ResponseEntity<GenericResponseDTO<?>> handleGoogleCallback(
+            HttpServletRequest request,
+            HttpServletResponse response,
+            @RequestParam("code") String code) {
+        try {
+            System.out.println(code);
+            GoogleIdToken.Payload payload = googleOAuthService.authenticateUser(code);
+
+            boolean emailVerified = Boolean.TRUE.equals(payload.getEmailVerified());
+
+            if (!emailVerified) {
+                return ResponseEntity
+                        .status(HttpStatus.BAD_REQUEST)
+                        .body(new GenericResponseDTO<>(false, "Email is not verified by Google", null));
+            }
+
+            String googleId = payload.getSubject();
+            String email = payload.getEmail();
+
+            Optional<UserAuthModel> user = userAuthService.findByGoogleId(googleId);
+            UserAuthModel newUser = null;
+            if (user.isEmpty()) {
+                if (userAuthService.existsByEmail(email)) {
+                    return ResponseEntity
+                            .status(HttpStatus.CONFLICT)
+                            .body(new GenericResponseDTO<>(false, "User with this email already registered regularly. Log in to link it to your google account.", null));
+                }
+
+                newUser = UserAuthModel.fromGoogleId(email, googleId);
+                userAuthService.createUser(newUser);
+            }
+
+            String firstName = (String) payload.get("given_name");
+            String lastName = (String) payload.get("family_name");
+            String picture = (String) payload.get("picture");
+
+            boolean profileFilled = externalPassengerService.checkIsPassengerProfileIsFilled(
+                    user.isPresent() ? user.get().getUserId() : newUser.getUserId()
+            );
+
+            if (!profileFilled) {
+                String tempToken = jwtUtil.generateTempTokenForGoogle(googleId);
+                System.out.println(tempToken);
+                Cookie tempCookie = HttpOnlyCookieConfig.createCookie(
+                        "TEMP_GOOGLE_AUTH",
+                        tempToken
+                );
+
+                response.addCookie(tempCookie);
+
+                return ResponseEntity
+                        .status(HttpStatus.PARTIAL_CONTENT)
+                        .body(new GenericResponseDTO<>(true, "Finish profile registration", Map.of(
+                                "email", email,
+                                "firstName", firstName,
+                                "lastName", lastName,
+                                "picture", picture,
+                                "tempToken", tempToken
+                        )));
+            }
+
+            CustomUserDetails userDetails = (CustomUserDetails) userAuthService.loadUserByGoogleId(googleId);
+            String token = userAuthService.createAuthToken(userDetails, true);
+
+            System.out.println(token);
+
+            Cookie cookie = HttpOnlyCookieConfig.createCookie(
+                    UserAuthConfig.USER_AUTH_COOKIE_NAME,
+                    token
+            );
+            response.addCookie(cookie);
+
+            return ResponseEntity
+                    .status(HttpStatus.OK)
+                    .body(new GenericResponseDTO<>(true, "User logged in successfully", null));
+
+        } catch (IOException | IllegalArgumentException e) {
+            System.out.println(e.getMessage());
+            return ResponseEntity
+                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new GenericResponseDTO<>(false, "Error signing in with Google", null));
+        }
+    }
+
+    @PostMapping("/fill-google-profile")
+    ResponseEntity<GenericResponseDTO<?>> fillGoogleProfileData(
+            @Valid @RequestBody RequestRegisterPassengerDTO profileData,
+            @CookieValue(name = "TEMP_GOOGLE_AUTH") String tempToken) {
+        String googleId = jwtUtil.validateAndExtractGoogleIdFromTempToken(tempToken);
+        ResponsePassengerDTO responsePassengerDTO = userAuthService.registerProfileFromGoogle(googleId, profileData);
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .body(new GenericResponseDTO<>(true, "Profile data is updated", responsePassengerDTO));
     }
 }
 
