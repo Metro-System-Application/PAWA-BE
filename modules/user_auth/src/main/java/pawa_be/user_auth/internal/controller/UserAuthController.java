@@ -27,7 +27,6 @@ import pawa_be.profile.external.dto.RequestRegisterPassengerDTO;
 import pawa_be.profile.external.dto.ResponsePassengerDTO;
 import pawa_be.user_auth.internal.dto.*;
 import pawa_be.user_auth.internal.service.IUserAuthService;
-import pawa_be.user_auth.internal.service.UserAuthService;
 
 import java.io.IOException;
 
@@ -195,6 +194,18 @@ class UserAuthController {
     }
 
     @PutMapping("/update-my-info")
+    @Operation(summary = "Update user's email and/or password",
+            description = "Authenticated users can update their email and password. If a new email is already in use, the request will fail.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "201", description = "User info updated successfully",
+                    content = @Content(schema = @Schema(implementation = GenericResponseDTO.class))),
+            @ApiResponse(responseCode = "400", description = "Invalid input or email already exists",
+                    content = @Content(schema = @Schema(implementation = GenericResponseDTO.class))),
+            @ApiResponse(responseCode = "404", description = "User not found",
+                    content = @Content(schema = @Schema(implementation = GenericResponseDTO.class))),
+            @ApiResponse(responseCode = "500", description = "Internal server error",
+                    content = @Content(schema = @Schema(implementation = GenericResponseDTO.class)))
+    })
     public ResponseEntity<GenericResponseDTO<?>> updateUserInfo(
             HttpServletRequest request,
             HttpServletResponse response,
@@ -221,6 +232,16 @@ class UserAuthController {
 
 
     @GetMapping("/google-signup-url")
+    @Operation(
+            summary = "Get Google signup redirect URL",
+            description = "Returns the Google OAuth signup URL that the frontend can use to redirect users for authentication."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Redirect URL returned successfully",
+                    content = @Content(schema = @Schema(implementation = GenericResponseDTO.class))),
+            @ApiResponse(responseCode = "500", description = "Internal server error",
+                    content = @Content(schema = @Schema(implementation = GenericResponseDTO.class)))
+    })
     ResponseEntity<GenericResponseDTO<?>> getRedirectLoginUrl() {
         return ResponseEntity
                 .status(HttpStatus.OK)
@@ -230,6 +251,58 @@ class UserAuthController {
     }
 
     @GetMapping("/google")
+    @Operation(
+            summary = "Handle Google OAuth callback",
+            description = "Handles the callback from Google OAuth. If the user is fully registered, returns an auth cookie. If the profile is incomplete, returns a temporary token and profile data."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(
+                    responseCode = "206",
+                    description = "Profile not complete. Temporary token and profile data returned.",
+                    content = @Content(schema = @Schema(implementation = GenericResponseDTO.class))
+            ),
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "User successfully authenticated. Auth token set in cookie.",
+                    content = @Content(schema = @Schema(implementation = GenericResponseDTO.class))
+            ),
+            @ApiResponse(
+                    responseCode = "400",
+                    description = "Bad request or Google account already linked.",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = GenericResponseDTO.class),
+                            examples = @ExampleObject(
+                                    name = "Google account already linked",
+                                    value = """
+            {
+              "success": false,
+              "message": "User with this email already registered regularly.",
+              "data": null
+            }
+            """
+                            )
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "500",
+                    description = "Internal server error",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = GenericResponseDTO.class),
+                            examples = @ExampleObject(
+                                    name = "Server error",
+                                    value = """
+            {
+              "success": false,
+              "message": "Something went wrong. Please try again later.",
+              "data": null
+            }
+            """
+                            )
+                    )
+            )
+    })
     public ResponseEntity<GenericResponseDTO<?>> handleGoogleCallback(
             HttpServletRequest request,
             HttpServletResponse response,
@@ -258,6 +331,27 @@ class UserAuthController {
 
 
     @PostMapping("/fill-google-profile")
+    @Operation(
+            summary = "Complete Google OAuth registration",
+            description = "Fills in the user's profile data after signing in with Google, using a temporary token from the cookie."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Profile data successfully registered.",
+                    content = @Content(schema = @Schema(implementation = GenericResponseDTO.class))
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "User associated with the token not found.",
+                    content = @Content(schema = @Schema(implementation = GenericResponseDTO.class))
+            ),
+            @ApiResponse(
+                    responseCode = "400",
+                    description = "Invalid input or expired/invalid token.",
+                    content = @Content(schema = @Schema(implementation = GenericResponseDTO.class))
+            )
+    })
     ResponseEntity<GenericResponseDTO<?>> fillGoogleProfileData(
             @Valid @RequestBody RequestRegisterPassengerDTO profileData,
             @CookieValue(name = "TEMP_GOOGLE_AUTH") String tempToken) {
