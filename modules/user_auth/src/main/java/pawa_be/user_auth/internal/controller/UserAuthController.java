@@ -16,6 +16,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import pawa_be.infrastructure.common.dto.GenericResponseDTO;
@@ -26,6 +27,7 @@ import pawa_be.profile.external.dto.RequestRegisterPassengerDTO;
 import pawa_be.profile.external.dto.ResponsePassengerDTO;
 import pawa_be.user_auth.internal.dto.*;
 import pawa_be.user_auth.internal.service.IUserAuthService;
+import pawa_be.user_auth.internal.service.UserAuthService;
 
 import java.io.IOException;
 
@@ -38,6 +40,9 @@ class UserAuthController {
 
     @Autowired
     private IUserAuthService userAuthService;
+
+    @Autowired
+    private UserDetailsService userDetailsService;
 
     @Operation(summary = "Check user auth credentials before registration")
     @ApiResponses(value = {
@@ -200,7 +205,7 @@ class UserAuthController {
 
         String updatedUserEmail = userAuthService.updateUserCredentials(email, user);
 
-        CustomUserDetails userDetails = (CustomUserDetails) userAuthService.loadUserByUsername(updatedUserEmail);
+        CustomUserDetails userDetails = (CustomUserDetails) userDetailsService.loadUserByUsername(updatedUserEmail);
         String authToken = userAuthService.createAuthToken(userDetails, true);
 
         Cookie cookie = HttpOnlyCookieConfig.createCookie(

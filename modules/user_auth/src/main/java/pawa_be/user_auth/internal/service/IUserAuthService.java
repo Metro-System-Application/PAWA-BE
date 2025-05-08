@@ -18,5 +18,4 @@ public interface IUserAuthService {
     ResponseGoogleAuthResultDTO authenticateAndHandleGoogleUser(String code) throws IOException;
     ResponsePassengerDTO registerProfileFromGoogle(String tempToken, RequestRegisterPassengerDTO profileData);
     String createAuthToken(CustomUserDetails user, boolean isValidCredential);
-    UserDetails loadUserByUsername(String email) throws UsernameNotFoundException;
 }

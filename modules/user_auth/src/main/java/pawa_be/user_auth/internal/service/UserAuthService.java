@@ -40,8 +40,7 @@ import pawa_be.user_auth.internal.model.UserAuthModel;
 import pawa_be.user_auth.internal.repository.UserAuthRepository;
 
 @Component
-public class UserAuthService implements UserDetailsService, IUserAuthService  {
-
+public class UserAuthService implements IUserAuthService {
     @Autowired
     private JwtUtil jwtUtil;
 
@@ -79,23 +78,6 @@ public class UserAuthService implements UserDetailsService, IUserAuthService  {
         } else {
             throw new RuntimeException("Couldn't create auth token.");
         }
-    }
-
-    @Override
-    public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
-        UserAuthModel user = userAuthRepository.findByEmail(email);
-
-        if (user == null) {
-            throw new UsernameNotFoundException("User not found");
-        }
-
-        GrantedAuthority role = new SimpleGrantedAuthority(user.getRole().getRoleName());
-        return new CustomUserDetails(
-                user.getUserId(),
-                user.getEmail(),
-                user.getPassword(),
-                List.of(role)
-        );
     }
 
     private UserDetails loadUserByGoogleId(String googleId) throws NotFoundException {
