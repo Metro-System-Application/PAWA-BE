@@ -9,8 +9,10 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import pawa_be.infrastructure.common.dto.GenericResponseDTO;
+import pawa_be.infrastructure.common.validation.exceptions.AlreadyExistsException;
 import pawa_be.infrastructure.common.validation.exceptions.NotFoundException;
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -80,16 +82,24 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
     }
 
-    @ExceptionHandler({ NotFoundException.class, IllegalArgumentException.class, RuntimeException.class })
+    @ExceptionHandler({ NotFoundException.class, IllegalArgumentException.class, RuntimeException.class, AlreadyExistsException.class })
     public ResponseEntity<GenericResponseDTO<?>> handleCommonExceptions(RuntimeException ex) {
-        HttpStatus status = (ex instanceof NotFoundException) ? HttpStatus.NOT_FOUND : HttpStatus.BAD_REQUEST;
+        HttpStatus status;
 
-        GenericResponseDTO<Map<String, String>> response = new GenericResponseDTO<>(
-                false,
-                ex.getMessage(),
-                null
-        );
+        if (ex instanceof NotFoundException) {
+            status = HttpStatus.NOT_FOUND;
+        } else if (ex instanceof AlreadyExistsException) {
+            status = HttpStatus.BAD_REQUEST;
+        } else {
+            status = HttpStatus.BAD_REQUEST;
+        }
 
-        return new ResponseEntity<>(response, status);
+        return new ResponseEntity<>(new GenericResponseDTO<>(false, ex.getMessage(), null), status);
     }
+
+    @ExceptionHandler({ IOException.class })
+    public ResponseEntity<GenericResponseDTO<?>> handleDeadlyExceptions(RuntimeException ex) {
+        return new ResponseEntity<>(new GenericResponseDTO<>(false, ex.getMessage(), null), HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
 }
