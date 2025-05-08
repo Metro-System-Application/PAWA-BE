@@ -3,6 +3,7 @@ package pawa_be.profile.external.service;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import pawa_be.profile.external.dto.RequestRegisterPassengerDTO;
+import pawa_be.profile.external.dto.ResponsePassengerDTO;
 import pawa_be.profile.internal.model.PassengerModel;
 import pawa_be.profile.internal.repository.PassengerRepository;
 
@@ -14,7 +15,7 @@ class ExternalPassengerService implements IExternalPassengerService {
     private PassengerRepository passengerRepository;
 
     @Override
-    public PassengerModel registerPassenger(String userId, String email, RequestRegisterPassengerDTO dto) {
+    public PassengerModel registerPassenger(String userId, RequestRegisterPassengerDTO dto) {
         PassengerModel passenger = new PassengerModel();
         passenger.setPassengerID(userId);
         passenger.setPassengerFirstName(dto.getPassengerFirstName());
@@ -32,5 +33,22 @@ class ExternalPassengerService implements IExternalPassengerService {
 
         passengerRepository.save(passenger);
         return passenger;
+//        return new ResponsePassengerDTO(
+//                passenger.getPassengerFirstName(),
+//                passenger.getPassengerMiddleName(),
+//                passenger.getPassengerLastName(),
+//                passenger.getPassengerPhone(),
+//                passenger.getPassengerAddress(),
+//                passenger.getPassengerDateOfBirth(),
+//                passenger.getNationalID(),
+//                passenger.getStudentID(),
+//                passenger.getHasDisability(),
+//                passenger.getIsRevolutionary()
+//        );
+    }
+
+    @Override
+    public boolean checkIsPassengerProfileIsFilled(String userId) {
+        return passengerRepository.findPassengerModelByPassengerID(userId) != null;
     }
 }

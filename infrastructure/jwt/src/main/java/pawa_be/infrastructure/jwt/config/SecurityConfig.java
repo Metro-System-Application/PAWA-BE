@@ -38,7 +38,7 @@ public class SecurityConfig {
         http
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests((requests) -> requests
-                        .requestMatchers("/auth/register", "/auth/login", "/auth/validate-existing-email").permitAll()
+                        .requestMatchers("/auth/register", "/auth/login", "/auth/validate-existing-email", "/auth/google-signup-url", "/auth/google", "/auth/fill-google-profile").permitAll()
                         .requestMatchers("/auth/update-my-info").authenticated()
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
                         .requestMatchers("/profile/**").authenticated()
