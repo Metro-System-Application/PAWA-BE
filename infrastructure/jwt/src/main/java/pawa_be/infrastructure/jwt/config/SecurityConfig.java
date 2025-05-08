@@ -1,6 +1,9 @@
 package pawa_be.infrastructure.jwt.config;
 
+import org.apache.catalina.connector.Connector;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.web.embedded.tomcat.TomcatServletWebServerFactory;
+import org.springframework.boot.web.servlet.server.ServletWebServerFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -34,9 +37,28 @@ public class SecurityConfig {
     }
 
     @Bean
+    public ServletWebServerFactory servletContainer() {
+        TomcatServletWebServerFactory tomcat = new TomcatServletWebServerFactory();
+        tomcat.addAdditionalTomcatConnectors(httpToHttpsRedirectConnector());
+        return tomcat;
+    }
+
+    private Connector httpToHttpsRedirectConnector() {
+        Connector connector = new Connector(TomcatServletWebServerFactory.DEFAULT_PROTOCOL);
+        connector.setScheme("http");
+        connector.setPort(8080);
+        connector.setSecure(false);
+        connector.setRedirectPort(8443);
+        return connector;
+    }
+
+    @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
                 .csrf(AbstractHttpConfigurer::disable)
+                .requiresChannel(channel ->
+                        channel.anyRequest().requiresSecure()
+                )
                 .authorizeHttpRequests((requests) -> requests
                         .requestMatchers("/auth/register", "/auth/login", "/auth/validate-existing-email", "/auth/google-signup-url", "/auth/google", "/auth/fill-google-profile").permitAll()
                         .requestMatchers("/auth/update-my-info").authenticated()
