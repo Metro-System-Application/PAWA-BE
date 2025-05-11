@@ -205,6 +205,29 @@ public class TicketTypeService {
     }
 
     /**
+     * Get ticket types that a specific passenger is eligible for using their email
+     * 
+     * @param email The email of the passenger to check eligibility for
+     * @return List of ticket types the passenger is eligible for
+     */
+    public List<TypeDto> getEligibleTicketTypesForPassengerByEmail(String email) {
+        PassengerModel passenger = passengerRepository.findPassengerModelByPassengerEmail(email);
+
+        if (passenger == null) {
+            return getAllTicketTypes();
+        }
+
+        // Get all active ticket types
+        List<TicketModel> allTicketTypes = ticketTypeRepository.findByActiveTrue();
+
+        // Filter based on eligibility
+        return allTicketTypes.stream()
+                .filter(ticketType -> isPassengerEligibleForTicket(passenger, ticketType))
+                .map(this::convertToDto)
+                .collect(Collectors.toList());
+    }
+
+    /**
      * Check if a passenger is eligible for a specific ticket type
      */
     private boolean isPassengerEligibleForTicket(PassengerModel passenger, TicketModel ticketType) {
@@ -394,6 +417,44 @@ public class TicketTypeService {
      */
     public TypeDto getBestTicketForPassengerByPhone(String phone) {
         List<TypeDto> eligibleTickets = getEligibleTicketTypesForPassengerByPhone(phone);
+
+        if (eligibleTickets.isEmpty()) {
+            return null;
+        }
+
+        // First check for FREE tickets - highest priority
+        List<TypeDto> freeTickets = eligibleTickets.stream()
+                .filter(ticket -> ticket.getPrice().compareTo(BigDecimal.ZERO) == 0)
+                .collect(Collectors.toList());
+
+        if (!freeTickets.isEmpty()) {
+            // If multiple free tickets, get the one with longest validity
+            return freeTickets.stream()
+                    .max(Comparator.comparing(ticket -> ticket.getExpiryInterval().toHours()))
+                    .orElse(freeTickets.get(0));
+        }
+
+        // Otherwise, prioritize by value (most hours per unit cost)
+        return eligibleTickets.stream()
+                .max(Comparator.comparing(ticket -> {
+                    // Avoid division by zero
+                    if (ticket.getPrice().compareTo(BigDecimal.ZERO) == 0) {
+                        return Double.MAX_VALUE; // Free tickets are highest value
+                    }
+                    // Calculate value ratio: hours per cost unit
+                    return ticket.getExpiryInterval().toHours() / ticket.getPrice().doubleValue();
+                }))
+                .orElse(eligibleTickets.get(0));
+    }
+
+    /**
+     * Get the best ticket type a passenger is eligible for based on their email
+     * 
+     * @param email The email of the passenger to check eligibility for
+     * @return The best ticket type option for the passenger, or null if none found
+     */
+    public TypeDto getBestTicketForPassengerByEmail(String email) {
+        List<TypeDto> eligibleTickets = getEligibleTicketTypesForPassengerByEmail(email);
 
         if (eligibleTickets.isEmpty()) {
             return null;
