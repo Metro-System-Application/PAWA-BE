@@ -12,7 +12,6 @@ import pawa_be.infrastructure.common.dto.GenericResponseDTO;
 import pawa_be.ticket.internal.dto.TypeDto;
 import pawa_be.ticket.internal.service.TicketTypeService;
 
-import java.math.BigDecimal;
 import java.util.List;
 
 @RestController
@@ -26,73 +25,23 @@ class TicketController {
                 this.ticketTypeService = ticketTypeService;
         }
 
-        @Operation(summary = "Get ticket types", description = "Returns active ticket types with optional filtering by passenger eligibility, budget, expiry time, and metro line.")
+        @Operation(summary = "Get all ticket types", description = "Returns all active ticket types with optional metro line filtering")
         @GetMapping("/ticket-type")
         @ApiResponse(responseCode = "200", description = "Ticket types retrieved successfully")
-        @ApiResponse(responseCode = "400", description = "Invalid parameter")
         @ApiResponse(responseCode = "401", description = "Unauthorized - user not authenticated")
         @ApiResponse(responseCode = "500", description = "Internal server error")
         ResponseEntity<GenericResponseDTO<List<TypeDto>>> getTicketTypes(
-                        @RequestParam(required = false) String passengerId,
-                        @RequestParam(required = false) String phone,
-                        @RequestParam(required = false) BigDecimal price,
-                        @RequestParam(required = false) Long expiryHours,
                         @RequestParam(required = false) String metroLineId) {
 
-                if (price != null && price.compareTo(BigDecimal.ZERO) < 0) {
-                        return ResponseEntity.badRequest()
-                                        .body(new GenericResponseDTO<>(
-                                                        false,
-                                                        "Price must be a non-negative value",
-                                                        null));
-                }
+                List<TypeDto> ticketTypes = ticketTypeService.getAllTicketTypes();
 
-                if (expiryHours != null && expiryHours <= 0) {
-                        return ResponseEntity.badRequest()
-                                        .body(new GenericResponseDTO<>(
-                                                        false,
-                                                        "Expiry hours must be a positive value",
-                                                        null));
-                }
-
-                List<TypeDto> ticketTypes;
-
-                if (passengerId != null) {
-                        ticketTypes = ticketTypeService.getEligibleTicketTypesForPassenger(passengerId);
-                } else if (phone != null && !phone.trim().isEmpty()) {
-                        ticketTypes = ticketTypeService.getEligibleTicketTypesForPassengerByPhone(phone);
-                } else {
-                        ticketTypes = ticketTypeService.getAllTicketTypes();
-                }
-
-                if (price != null) {
-                        ticketTypes = ticketTypes.stream()
-                                        .filter(ticket -> ticket.getPrice().compareTo(price) <= 0)
-                                        .collect(java.util.stream.Collectors.toList());
-                }
-
-                if (expiryHours != null) {
-                        ticketTypes = ticketTypes.stream()
-                                        .filter(ticket -> ticket.getExpiryInterval().toHours() <= expiryHours)
-                                        .collect(java.util.stream.Collectors.toList());
-                }
-
-                // Additional filtering by metro line could be implemented here
+                // Note: metroLine parameter is kept for future implementation
                 // if (metroLineId != null) { ... }
-
-                String message = "Ticket types retrieved successfully";
-                if (price != null && expiryHours != null) {
-                        message = "Available tickets within your budget and timeframe retrieved successfully";
-                } else if (price != null) {
-                        message = "Available tickets within your budget retrieved successfully";
-                } else if (expiryHours != null) {
-                        message = "Available tickets with your desired expiry time retrieved successfully";
-                }
 
                 return ResponseEntity.ok(
                                 new GenericResponseDTO<>(
                                                 true,
-                                                message,
+                                                "Ticket types retrieved successfully",
                                                 ticketTypes));
         }
 
@@ -103,15 +52,15 @@ class TicketController {
         @ApiResponse(responseCode = "400", description = "Missing required identification parameters")
         ResponseEntity<GenericResponseDTO<TypeDto>> getBestTicketForPassenger(
                         @RequestParam(required = false) String passengerId,
-                        @RequestParam(required = false) String phone) {
+                        @RequestParam(required = false) String email) {
 
                 // Verify at least one identification parameter is provided
                 if ((passengerId == null || passengerId.trim().isEmpty()) &&
-                                (phone == null || phone.trim().isEmpty())) {
+                                (email == null || email.trim().isEmpty())) {
                         return ResponseEntity.badRequest()
                                         .body(new GenericResponseDTO<>(
                                                         false,
-                                                        "Either passenger ID or phone number is required",
+                                                        "Either passenger ID or email is required",
                                                         null));
                 }
 
@@ -120,7 +69,7 @@ class TicketController {
                 if (passengerId != null && !passengerId.trim().isEmpty()) {
                         bestTicket = ticketTypeService.getBestTicketForPassenger(passengerId);
                 } else {
-                        bestTicket = ticketTypeService.getBestTicketForPassengerByPhone(phone);
+                        bestTicket = ticketTypeService.getBestTicketForPassengerByEmail(email);
                 }
 
                 if (bestTicket == null) {
@@ -135,69 +84,6 @@ class TicketController {
                                 new GenericResponseDTO<>(
                                                 true,
                                                 "Best ticket option found for passenger",
-                                                bestTicket));
-        }
-
-        @Operation(summary = "Get best ticket type by attributes", description = "Returns the best ticket type available based on specific passenger attributes")
-        @GetMapping("/eligible-ticket")
-        @ApiResponse(responseCode = "200", description = "Best eligible ticket found")
-        @ApiResponse(responseCode = "404", description = "No eligible special ticket found")
-        ResponseEntity<GenericResponseDTO<TypeDto>> getBestTicketByAttributes(
-                        @RequestParam(required = false) Boolean isRevolutionary,
-                        @RequestParam(required = false) Boolean hasDisability,
-                        @RequestParam(required = false) Integer age,
-                        @RequestParam(required = false) String studentId) {
-
-                // Build message based on provided attributes
-                StringBuilder attributeMessage = new StringBuilder("Based on attributes: ");
-                boolean hasAttributes = false;
-
-                if (Boolean.TRUE.equals(isRevolutionary)) {
-                        attributeMessage.append("revolutionary status, ");
-                        hasAttributes = true;
-                }
-
-                if (Boolean.TRUE.equals(hasDisability)) {
-                        attributeMessage.append("disability status, ");
-                        hasAttributes = true;
-                }
-
-                if (age != null) {
-                        attributeMessage.append("age " + age + ", ");
-                        hasAttributes = true;
-                }
-
-                if (studentId != null && !studentId.trim().isEmpty()) {
-                        attributeMessage.append("student status, ");
-                        hasAttributes = true;
-                }
-
-                // Check if any attributes were provided
-                if (!hasAttributes) {
-                        return ResponseEntity.ok(
-                                        new GenericResponseDTO<>(
-                                                        true,
-                                                        "No special eligibility attributes provided, showing standard ticket options",
-                                                        null));
-                }
-
-                // Get the best ticket based on the attributes
-                TypeDto bestTicket = ticketTypeService.getBestTicketByAttributes(
-                                isRevolutionary, hasDisability, age, studentId);
-
-                if (bestTicket == null) {
-                        return ResponseEntity.status(404)
-                                        .body(new GenericResponseDTO<>(
-                                                        false,
-                                                        "No specific ticket available for the provided attributes",
-                                                        null));
-                }
-
-                return ResponseEntity.ok(
-                                new GenericResponseDTO<>(
-                                                true,
-                                                attributeMessage.toString() + "the best ticket option is: "
-                                                                + bestTicket.getTypeName(),
                                                 bestTicket));
         }
 }
