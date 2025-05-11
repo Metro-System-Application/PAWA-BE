@@ -19,7 +19,7 @@ import java.util.List;
 public class MetroLineService {
 
     private final RestTemplate restTemplate;
-    private static final String AUTH_EMAIL = "OPWA_memeber@gmail.com";
+    private static final String AUTH_EMAIL = "OPWA_memeber@email.com";
 
     // Token caching mechanism
     private String cachedToken;
