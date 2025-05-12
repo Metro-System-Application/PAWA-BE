@@ -44,7 +44,12 @@ public class AuthRequestFilter extends OncePerRequestFilter {
         String jwt = null;
         boolean isValidToken = false;
 
-        if (request.getCookies() != null) {
+        final String authHeader = request.getHeader("Authorization");
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            jwt = authHeader.substring(7); // Remove "Bearer " prefix
+            isValidToken = jwtUtil.verifyJwtSignature(jwt);
+        }
+        if (jwt == null && request.getCookies() != null) {
             for (var cookie : request.getCookies()) {
                 if (UserAuthConfig.USER_AUTH_COOKIE_NAME.equals(cookie.getName())) {
                     jwt = cookie.getValue();
