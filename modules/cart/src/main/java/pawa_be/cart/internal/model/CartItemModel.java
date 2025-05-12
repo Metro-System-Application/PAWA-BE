@@ -27,6 +27,9 @@ public class CartItemModel {
     @Column(nullable = false)
     private UUID endStationID;
 
+    @Column(nullable = false)
+    private int amount;
+
     @CreationTimestamp
     @Column(updatable = false)
     private LocalDateTime createdAt;
