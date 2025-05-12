@@ -30,8 +30,16 @@ public class AuthRequestFilter extends OncePerRequestFilter {
     private JwtUtil jwtUtil;
 
     @Override
-    protected void doFilterInternal(@NonNull HttpServletRequest request, @NonNull HttpServletResponse response, @NonNull FilterChain filterChain)
+    protected void doFilterInternal(@NonNull HttpServletRequest request, @NonNull HttpServletResponse response,
+            @NonNull FilterChain filterChain)
             throws ServletException, IOException {
+
+        // Skip authentication for Swagger UI and API docs
+        String requestPath = request.getRequestURI();
+        if (requestPath.contains("/swagger-ui/") || requestPath.contains("/v3/api-docs/")) {
+            filterChain.doFilter(request, response);
+            return;
+        }
 
         String jwt = null;
         boolean isValidToken = false;
@@ -52,8 +60,7 @@ public class AuthRequestFilter extends OncePerRequestFilter {
 
             if (userDetails != null) {
                 UsernamePasswordAuthenticationToken emailAuthToken = new UsernamePasswordAuthenticationToken(
-                        userDetails, null, userDetails.getAuthorities()
-                );
+                        userDetails, null, userDetails.getAuthorities());
                 emailAuthToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                 SecurityContextHolder.getContext().setAuthentication(emailAuthToken);
             }
