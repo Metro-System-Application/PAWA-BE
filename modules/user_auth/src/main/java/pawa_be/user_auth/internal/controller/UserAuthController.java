@@ -7,40 +7,28 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
-import jakarta.validation.executable.ValidateOnExecution;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
-
-import jakarta.servlet.http.Cookie;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-
 import pawa_be.infrastructure.common.dto.GenericResponseDTO;
-import pawa_be.infrastructure.jwt.JwtUtil;
 import pawa_be.infrastructure.jwt.config.HttpOnlyCookieConfig;
 import pawa_be.infrastructure.jwt.config.UserAuthConfig;
-import pawa_be.infrastructure.jwt.config.UserRoleConfig;
 import pawa_be.infrastructure.jwt.user_details.CustomUserDetails;
-import pawa_be.payment.external.service.IExternalPaymentService;
-import pawa_be.profile.external.service.IExternalPassengerService;
-import pawa_be.profile.internal.model.PassengerModel;
+import pawa_be.profile.external.dto.RequestRegisterPassengerDTO;
+import pawa_be.profile.external.dto.ResponsePassengerDTO;
 import pawa_be.user_auth.internal.dto.*;
-import pawa_be.user_auth.internal.enumeration.UpdateUserResult;
-import pawa_be.user_auth.internal.model.UserAuthModel;
-import pawa_be.user_auth.internal.service.UserAuthService;
+import pawa_be.user_auth.internal.service.IUserAuthService;
 
-import java.util.Optional;
+import java.io.IOException;
 
 @Validated
 @RestController
@@ -50,33 +38,10 @@ import java.util.Optional;
 class UserAuthController {
 
     @Autowired
-    private AuthenticationManager authenticationManager;
+    private IUserAuthService userAuthService;
 
     @Autowired
-    private UserAuthService userAuthService;
-
-    @Autowired
-    private BCryptPasswordEncoder passwordEncoder;
-
-    @Autowired
-    private IExternalPassengerService externalPassengerService;
-
-    @Autowired
-    private IExternalPaymentService externalPaymentService;
-
-    private String getLoginToken(String username, String password) {
-        UsernamePasswordAuthenticationToken credentialToken
-                = new UsernamePasswordAuthenticationToken(
-                username,
-                password
-        );
-
-        Authentication token = authenticationManager.authenticate(credentialToken);
-        return userAuthService.createAuthToken(
-                (CustomUserDetails) token.getPrincipal(),
-                token.isAuthenticated()
-        );
-    }
+    private UserDetailsService userDetailsService;
 
     @Operation(summary = "Check user auth credentials before registration")
     @ApiResponses(value = {
@@ -133,9 +98,9 @@ class UserAuthController {
                     )
             )
     })
-    @PostMapping("/validate-login-data")
-    ResponseEntity<GenericResponseDTO<?>> validateLoginData(@Valid @RequestBody RequestValidateUserLoginDataDTO requestValidateUserLoginDataDTO) {
-        boolean emailExists = userAuthService.existsByEmail(requestValidateUserLoginDataDTO.getEmail());
+    @GetMapping("/validate-existing-email")
+    ResponseEntity<GenericResponseDTO<?>> validateLoginData(@Valid @RequestParam String email) {
+        boolean emailExists = userAuthService.existsByEmail(email);
         return ResponseEntity
                 .status(emailExists ? HttpStatus.CONFLICT : HttpStatus.OK)
                 .body(new GenericResponseDTO<>(
@@ -192,37 +157,11 @@ class UserAuthController {
                             )))
     })
     @PostMapping("/register")
-    ResponseEntity<GenericResponseDTO<?>> registerUser(@Valid @RequestBody RequestRegisterUserDTO user) {
-        if (userAuthService.existsByEmail(user.getEmail())) {
-            return ResponseEntity
-                    .status(HttpStatus.BAD_REQUEST)
-                    .body(new GenericResponseDTO<>(false, "User with this email already exists.", null));
-        }
-
-        UserAuthModel userWithHashedPassword = new UserAuthModel(
-                user.getEmail(),
-                passwordEncoder.encode(user.getPassword())
-        );
-
-        UserAuthModel newUser = userAuthService.createUser(userWithHashedPassword);
-
-        PassengerModel newPassenger = externalPassengerService.registerPassenger(
-                newUser.getUserId(),
-                newUser.getEmail(),
-                user.getPassengerData()
-        );
-
-        externalPaymentService.createPassengerEwallet(newPassenger);
-
-        ResponseRegisterUserDTO responseData = new ResponseRegisterUserDTO(
-                newUser.getUserId(),
-                newUser.getEmail(),
-                UserRoleConfig.PASSENGER
-        );
-
+    public ResponseEntity<GenericResponseDTO<?>> registerUser(@Valid @RequestBody RequestRegisterUserDTO user) {
+        ResponseRegisterUserDTO response = userAuthService.registerUser(user);
         return ResponseEntity
                 .status(HttpStatus.CREATED)
-                .body(new GenericResponseDTO<>(true, "User registered successfully", responseData));
+                .body(new GenericResponseDTO<>(true, "User registered successfully", response));
     }
 
     @Operation(summary = "Login a user and set auth token as HttpOnly cookie")
@@ -238,79 +177,188 @@ class UserAuthController {
             HttpServletResponse response,
             @RequestBody RequestLoginUserDTO loginDto
     ) {
-        String username = loginDto.getEmail();
-        String password = loginDto.getPassword();
+        ResponseLoginUserDTO responseDto = userAuthService.login(
+                loginDto.getEmail(),
+                loginDto.getPassword()
+        );
 
-        try {
-            String userAuthToken = getLoginToken(username, password);
-            ResponseLoginUserDTO responseDto = new ResponseLoginUserDTO(userAuthToken);
+        Cookie cookie = HttpOnlyCookieConfig.createCookie(
+                UserAuthConfig.USER_AUTH_COOKIE_NAME,
+                responseDto.getToken()
+        );
+        response.addCookie(cookie);
 
-            Cookie cookie = HttpOnlyCookieConfig.createCookie(
-                    UserAuthConfig.USER_AUTH_COOKIE_NAME,
-                    userAuthToken
-            );
-            response.addCookie(cookie);
-
-            return ResponseEntity
-                    .status(HttpStatus.OK)
-                    .body(new GenericResponseDTO<>(true, "User logged in successfully", responseDto));
-
-        } catch (Exception e) {
-            System.err.println("Error when logging in: " + e.getMessage());
-            return ResponseEntity
-                    .status(HttpStatus.BAD_REQUEST)
-                    .body(new GenericResponseDTO<>(false, "Bad credentials.", null));
-        }
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .body(new GenericResponseDTO<>(true, "User logged in successfully", responseDto));
     }
 
     @PutMapping("/update-my-info")
-    ResponseEntity<GenericResponseDTO<?>> updateUserInfo(
+    @Operation(summary = "Update user's email and/or password",
+            description = "Authenticated users can update their email and password. If a new email is already in use, the request will fail.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "201", description = "User info updated successfully",
+                    content = @Content(schema = @Schema(implementation = GenericResponseDTO.class))),
+            @ApiResponse(responseCode = "400", description = "Invalid input or email already exists",
+                    content = @Content(schema = @Schema(implementation = GenericResponseDTO.class))),
+            @ApiResponse(responseCode = "404", description = "User not found",
+                    content = @Content(schema = @Schema(implementation = GenericResponseDTO.class))),
+            @ApiResponse(responseCode = "500", description = "Internal server error",
+                    content = @Content(schema = @Schema(implementation = GenericResponseDTO.class)))
+    })
+    public ResponseEntity<GenericResponseDTO<?>> updateUserInfo(
             HttpServletRequest request,
             HttpServletResponse response,
             Authentication authentication,
-            @Valid @RequestBody RequestUpdateUserDTO user) {
+            @Valid @RequestBody RequestUpdateUserDTO user
+    ) {
         final String email = authentication.getName();
 
-        if (user.getPassword() != null) {
-            user.setPassword(passwordEncoder.encode(user.getPassword()));
-        }
+        String updatedUserEmail = userAuthService.updateUserCredentials(email, user);
 
-        UpdateUserResult result = userAuthService.updateUserCredentials(email, user);
+        CustomUserDetails userDetails = (CustomUserDetails) userDetailsService.loadUserByUsername(updatedUserEmail);
+        String authToken = userAuthService.createAuthToken(userDetails, true);
 
-        try {
-            switch (result.getStatus()) {
-                case CURRENT_EMAIL_NOT_FOUND:
-                    return ResponseEntity
-                            .badRequest()
-                            .body(new GenericResponseDTO<>(false, "User not found", null));
-                case NEW_EMAIL_ALREADY_EXISTS:
-                    return ResponseEntity
-                            .badRequest()
-                            .body(new GenericResponseDTO<>(false, "Email already in use", null));
-                case SUCCESS: {
-                        CustomUserDetails userDetails = (CustomUserDetails) userAuthService.loadUserByUsername(user.getEmail());
-                        String authToken = userAuthService.createAuthToken(userDetails, true);
-
-                        Cookie cookie = HttpOnlyCookieConfig.createCookie(
-                                UserAuthConfig.USER_AUTH_COOKIE_NAME,
-                                authToken
-                        );
-                        response.addCookie(cookie);
-
-                        return ResponseEntity
-                                .status(HttpStatus.CREATED)
-                                .body(new GenericResponseDTO<>(true, "Data updated successfully", null));
-                }
-            }
-        } catch (Exception e) {
-            return ResponseEntity
-                    .status(HttpStatus.BAD_REQUEST)
-                    .body(new GenericResponseDTO<>(false, "Error when updating info", null));
-        }
+        Cookie cookie = HttpOnlyCookieConfig.createCookie(
+                UserAuthConfig.USER_AUTH_COOKIE_NAME,
+                authToken
+        );
+        response.addCookie(cookie);
 
         return ResponseEntity
-                .status(HttpStatus.BAD_REQUEST)
-                .body(new GenericResponseDTO<>(false, "Error when updating info", null));
+                .status(HttpStatus.CREATED)
+                .body(new GenericResponseDTO<>(true, "Data updated successfully", null));
+    }
+
+
+    @GetMapping("/google-signup-url")
+    @Operation(
+            summary = "Get Google signup redirect URL",
+            description = "Returns the Google OAuth signup URL that the frontend can use to redirect users for authentication."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Redirect URL returned successfully",
+                    content = @Content(schema = @Schema(implementation = GenericResponseDTO.class))),
+            @ApiResponse(responseCode = "500", description = "Internal server error",
+                    content = @Content(schema = @Schema(implementation = GenericResponseDTO.class)))
+    })
+    ResponseEntity<GenericResponseDTO<?>> getRedirectLoginUrl() {
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .body(new GenericResponseDTO<>(true, "", new ResponseGetRedirectLoginUrlDTO(
+                        userAuthService.buildGoogleSignUpUrl()
+                )));
+    }
+
+    @GetMapping("/google")
+    @Operation(
+            summary = "Handle Google OAuth callback",
+            description = "Handles the callback from Google OAuth. If the user is fully registered, returns an auth cookie. If the profile is incomplete, returns a temporary token and profile data."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(
+                    responseCode = "206",
+                    description = "Profile not complete. Temporary token and profile data returned.",
+                    content = @Content(schema = @Schema(implementation = GenericResponseDTO.class))
+            ),
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "User successfully authenticated. Auth token set in cookie.",
+                    content = @Content(schema = @Schema(implementation = GenericResponseDTO.class))
+            ),
+            @ApiResponse(
+                    responseCode = "400",
+                    description = "Bad request or Google account already linked.",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = GenericResponseDTO.class),
+                            examples = @ExampleObject(
+                                    name = "Google account already linked",
+                                    value = """
+            {
+              "success": false,
+              "message": "User with this email already registered regularly.",
+              "data": null
+            }
+            """
+                            )
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "500",
+                    description = "Internal server error",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = GenericResponseDTO.class),
+                            examples = @ExampleObject(
+                                    name = "Server error",
+                                    value = """
+            {
+              "success": false,
+              "message": "Something went wrong. Please try again later.",
+              "data": null
+            }
+            """
+                            )
+                    )
+            )
+    })
+    public ResponseEntity<GenericResponseDTO<?>> handleGoogleCallback(
+            HttpServletRequest request,
+            HttpServletResponse response,
+            @RequestParam("code") String code) throws IOException {
+        ResponseGoogleAuthResultDTO result = userAuthService.authenticateAndHandleGoogleUser(code);
+
+        if (!result.isProfileComplete()) {
+            Cookie tempCookie = HttpOnlyCookieConfig.createCookie("TEMP_GOOGLE_AUTH", result.getTempToken());
+            response.addCookie(tempCookie);
+
+            return ResponseEntity
+                    .status(HttpStatus.PARTIAL_CONTENT)
+                    .body(new GenericResponseDTO<>(true, "Finish profile registration", result.getProfileData()));
+        }
+
+        Cookie cookie = HttpOnlyCookieConfig.createCookie(
+                UserAuthConfig.USER_AUTH_COOKIE_NAME,
+                result.getAuthToken()
+        );
+        response.addCookie(cookie);
+
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .body(new GenericResponseDTO<>(true, "User logged in successfully", null));
+    }
+
+
+    @PostMapping("/fill-google-profile")
+    @Operation(
+            summary = "Complete Google OAuth registration",
+            description = "Fills in the user's profile data after signing in with Google, using a temporary token from the cookie."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Profile data successfully registered.",
+                    content = @Content(schema = @Schema(implementation = GenericResponseDTO.class))
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "User associated with the token not found.",
+                    content = @Content(schema = @Schema(implementation = GenericResponseDTO.class))
+            ),
+            @ApiResponse(
+                    responseCode = "400",
+                    description = "Invalid input or expired/invalid token.",
+                    content = @Content(schema = @Schema(implementation = GenericResponseDTO.class))
+            )
+    })
+    ResponseEntity<GenericResponseDTO<?>> fillGoogleProfileData(
+            @Valid @RequestBody RequestRegisterPassengerDTO profileData,
+            @CookieValue(name = "TEMP_GOOGLE_AUTH") String tempToken) {
+        ResponsePassengerDTO responsePassengerDTO = userAuthService.registerProfileFromGoogle(tempToken, profileData);
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .body(new GenericResponseDTO<>(true, "Profile data is updated", responsePassengerDTO));
     }
 }
 

@@ -35,10 +35,10 @@ public class CartItemModel {
     private LocalDateTime updatedAt;
 
     @ManyToOne
-    @JoinColumn(name = "cart_id", referencedColumnName = "cartID", nullable = false, insertable = false, updatable = false)
+    @JoinColumn(name="cart_id", referencedColumnName = "cartID", nullable = false, updatable = false)
     private CartModel cart;
 
     @ManyToOne
-    @JoinColumn(name = "ticket_type_code", referencedColumnName = "ticket_type_code", nullable = false)
+    @JoinColumn(name = "type_id", referencedColumnName = "id", nullable = false, updatable = false)
     private TicketModel type;
 }

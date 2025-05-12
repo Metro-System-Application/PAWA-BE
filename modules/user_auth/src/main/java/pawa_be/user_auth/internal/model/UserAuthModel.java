@@ -23,10 +23,23 @@ public class UserAuthModel {
     @Enumerated(EnumType.STRING)
     private UserRoleConfig role;
 
-    public UserAuthModel(String username, String password) {
+    private String googleId;
+
+    public static UserAuthModel fromPassword(String username, String password) {
+        return new UserAuthModel(username, password, true);
+    }
+
+    public static UserAuthModel fromGoogleId(String username, String googleId) {
+        return new UserAuthModel(username, googleId, false);
+    }
+
+    private UserAuthModel(String username, String credential, boolean isPassword) {
         this.email = username;
-        this.password = password;
-        // TODO: add again when connect the db with OPWA
+        if (isPassword) {
+            this.password = credential;
+        } else {
+            this.googleId = credential;
+        }
         this.role = UserRoleConfig.PASSENGER;
     }
 }

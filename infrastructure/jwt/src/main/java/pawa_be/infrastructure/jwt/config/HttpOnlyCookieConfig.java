@@ -10,7 +10,7 @@ public class HttpOnlyCookieConfig {
         cookie.setMaxAge(COOKIE_AGE);
         cookie.setHttpOnly(true);
         cookie.setPath("/");
-        cookie.setSecure(false); // No HTTPS for now
+        cookie.setSecure(true);
         return cookie;
     }
 }
