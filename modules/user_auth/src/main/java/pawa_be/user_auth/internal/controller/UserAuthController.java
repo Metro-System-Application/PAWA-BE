@@ -30,6 +30,8 @@ import pawa_be.user_auth.internal.service.IUserAuthService;
 
 import java.io.IOException;
 
+import static pawa_be.infrastructure.jwt.misc.Miscellaneous.buildCookieWithCredentials;
+
 @Validated
 @RestController
 @RequestMapping("/auth")
@@ -182,11 +184,9 @@ class UserAuthController {
                 loginDto.getPassword()
         );
 
-        Cookie cookie = HttpOnlyCookieConfig.createCookie(
-                UserAuthConfig.USER_AUTH_COOKIE_NAME,
-                responseDto.getToken()
-        );
-        response.addCookie(cookie);
+        String authCookieHeader = buildCookieWithCredentials(responseDto.getToken());
+
+        response.setHeader("Set-Cookie", authCookieHeader);
 
         return ResponseEntity
                 .status(HttpStatus.OK)
@@ -219,11 +219,9 @@ class UserAuthController {
         CustomUserDetails userDetails = (CustomUserDetails) userDetailsService.loadUserByUsername(updatedUserEmail);
         String authToken = userAuthService.createAuthToken(userDetails, true);
 
-        Cookie cookie = HttpOnlyCookieConfig.createCookie(
-                UserAuthConfig.USER_AUTH_COOKIE_NAME,
-                authToken
-        );
-        response.addCookie(cookie);
+        String authCookieHeader = buildCookieWithCredentials(authToken);
+
+        response.setHeader("Set-Cookie", authCookieHeader);
 
         return ResponseEntity
                 .status(HttpStatus.CREATED)
@@ -318,11 +316,9 @@ class UserAuthController {
                     .body(new GenericResponseDTO<>(true, "Finish profile registration", result.getProfileData()));
         }
 
-        Cookie cookie = HttpOnlyCookieConfig.createCookie(
-                UserAuthConfig.USER_AUTH_COOKIE_NAME,
-                result.getAuthToken()
-        );
-        response.addCookie(cookie);
+        String authCookieHeader = buildCookieWithCredentials(result.getAuthToken());
+
+        response.setHeader("Set-Cookie", authCookieHeader);
 
         return ResponseEntity
                 .status(HttpStatus.OK)
