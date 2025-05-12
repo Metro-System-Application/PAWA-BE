@@ -25,6 +25,7 @@ public class CartItemDto {
     private TicketType ticketType;
     private String ticketTypeName;
     private BigDecimal price;
+    private int amount;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }

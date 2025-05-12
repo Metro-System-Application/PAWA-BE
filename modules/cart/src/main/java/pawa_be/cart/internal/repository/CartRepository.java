@@ -11,4 +11,5 @@ import java.util.UUID;
 @Repository
 public interface CartRepository extends CrudRepository<CartModel, UUID> {
     Optional<CartModel> findByPassengerModel(PassengerModel passengerModel);
+    Optional<CartModel> findByPassengerModel_PassengerID(String passengerID);
 }

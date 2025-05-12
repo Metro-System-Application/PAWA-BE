@@ -5,12 +5,12 @@
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>pawa_be</groupId>
-        <artifactId>PAWA_BE</artifactId>
+        <artifactId>infrastructure</artifactId>
         <version>0.0.1-SNAPSHOT</version>
     </parent>
 
-    <artifactId>infrastructure</artifactId>
-    <packaging>pom</packaging>
+    <groupId>pawa_be.infrastructre.stripe</groupId>
+    <artifactId>stripe</artifactId>
 
     <properties>
         <maven.compiler.source>23</maven.compiler.source>
@@ -18,13 +18,11 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
 
-    <modules>
-        <module>jwt</module>
-        <module>common</module>
-        <module>bucket</module>
-        <module>google_oauth</module>
-        <module>stripe</module>
-    </modules>
-
-    
+    <dependencies>
+        <dependency>
+            <groupId>com.stripe</groupId>
+            <artifactId>stripe-java</artifactId>
+            <version>29.0.0</version>
+        </dependency>
+    </dependencies>
 </project>

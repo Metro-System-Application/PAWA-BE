@@ -1,6 +1,7 @@
 package pawa_be.infrastructure.common.validation;
 
 import com.fasterxml.jackson.databind.exc.InvalidFormatException;
+import com.stripe.exception.StripeException;
 import jakarta.validation.ConstraintViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -102,4 +103,8 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(new GenericResponseDTO<>(false, ex.getMessage(), null), HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
+    @ExceptionHandler({ StripeException.class })
+    public ResponseEntity<GenericResponseDTO<?>> handleStripeException(StripeException ex) {
+        return new ResponseEntity<>(new GenericResponseDTO<>(false, ex.getMessage(), null), HttpStatus.INTERNAL_SERVER_ERROR);
+    }
 }

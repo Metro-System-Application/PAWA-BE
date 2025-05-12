@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   minio:
     image: minio/minio:latest
@@ -22,6 +20,22 @@ services:
     entrypoint: [ "/bin/sh", "-c", "chmod +x /init-bucket.sh && /init-bucket.sh" ]
     volumes:
       - ./init-bucket.sh:/init-bucket.sh
+
+  stripe-cli:
+    image: stripe/stripe-cli:latest
+    container_name: stripe-cli
+    depends_on:
+      - minio
+    volumes:
+      - ./stripe-config:/root/.config/stripe
+      - ./install/init_stripe.sh:/stripe-entrypoint.sh
+      - ./application/src/main/resources/PAWA_BE_CN.pem:/usr/local/share/ca-certificates/my-ca.crt:ro
+    entrypoint: [ "/bin/sh", "/stripe-entrypoint.sh" ]
+    environment:
+      STRIPE_API_KEY: sk_test_51RHDVRIsR1g5YtKwUR16rCyOeeReFFxFp50ZIRMfZDILke8iGK58Ip62QfO4kQNr0W94Z0TYvKVg8jwgIXOkhIN300C6pWFy9B
+      STRIPE_CA_BUNDLE: /usr/local/share/ca-certificates/my-ca.crt
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
 
 volumes:
   minio-data:

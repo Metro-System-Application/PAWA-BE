@@ -1,5 +1,6 @@
 package pawa_be.payment.internal.controller;
 
+import com.stripe.exception.StripeException;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -16,13 +17,17 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import pawa_be.infrastructure.common.dto.GenericResponseDTO;
+import pawa_be.insfrastructure.stripe.dto.ResponseCreateStripeSessionDTO;
+import pawa_be.payment.internal.dto.RequestPayCheckoutWithStripeDTO;
 import pawa_be.payment.internal.dto.RequestPurchaseTicketForPassengerDTO;
+import pawa_be.payment.internal.dto.RequestTopUpBalanceDTO;
 import pawa_be.payment.internal.service.PaymentService;
 import pawa_be.payment.internal.service.result.PurchaseTicketForPassengerWithIdByOperatorResult;
 import pawa_be.payment.internal.service.result.PurchaseTicketForPassengerWithIdByOperatorResultType;
 
 import java.math.BigDecimal;
 
+import static pawa_be.infrastructure.jwt.misc.Miscellaneous.getEmailFromAuthentication;
 import static pawa_be.infrastructure.jwt.misc.Miscellaneous.getUserIdFromAuthentication;
 import static pawa_be.payment.internal.service.result.PurchaseTicketForPassengerWithIdByOperatorResultType.INSUFFICIENT_BALANCE;
 
@@ -200,11 +205,11 @@ class PaymentController {
             )
     })
     @GetMapping("/top-up-balance/{amount}")
-    ResponseEntity<GenericResponseDTO<?>> topUpBalance(
+    ResponseEntity<GenericResponseDTO<?>> topUpBalance_DELETE(
             @Parameter(description = "Amount to top up in the wallet") @PathVariable int amount,
             @Parameter(hidden = true) Authentication authentication) {
 
-        // ⚠️ For testing only
+        // TODO: DELETE: For testing only
         String passengerId = getUserIdFromAuthentication(authentication);
         BigDecimal balance = paymentService.selfTopUpEWallet(passengerId, amount);
         return ResponseEntity
@@ -213,5 +218,55 @@ class PaymentController {
                         true,
                         "Top up was successful",
                         balance));
+    }
+
+    @PostMapping("/top-up-balance")
+    ResponseEntity<GenericResponseDTO<?>> topUpBalance(
+            @Parameter(hidden = true) Authentication authentication,
+            @Valid RequestTopUpBalanceDTO topUpBalanceDTO
+            ) throws StripeException {
+        String passengerId = getUserIdFromAuthentication(authentication);
+        String passengerEmail = getEmailFromAuthentication(authentication);
+
+        ResponseCreateStripeSessionDTO response =  paymentService.createTopUpPaymentSession(passengerId, passengerEmail, topUpBalanceDTO.getPrice(), topUpBalanceDTO.getSuccessUrl(), topUpBalanceDTO.getCancelUrl());
+        return ResponseEntity
+                .status(HttpStatus.PERMANENT_REDIRECT)
+                .body(new GenericResponseDTO<>(
+                        true,
+                        "",
+                        response));
+    }
+
+    @PostMapping("/checkout")
+    ResponseEntity<GenericResponseDTO<?>> checkout(
+            @Parameter(hidden = true) Authentication authentication,
+            @Valid RequestPayCheckoutWithStripeDTO payCheckoutWithStripeDTO
+    ) throws StripeException {
+        String passengerId = getUserIdFromAuthentication(authentication);
+        String passengerEmail = getEmailFromAuthentication(authentication);
+
+        ResponseCreateStripeSessionDTO response =  paymentService.createTicketPaymentSession(passengerId, passengerEmail, payCheckoutWithStripeDTO.getSuccessUrl(), payCheckoutWithStripeDTO.getCancelUrl());
+        return ResponseEntity
+                .status(HttpStatus.PERMANENT_REDIRECT)
+                .body(new GenericResponseDTO<>(
+                        true,
+                        "",
+                        response));
+    }
+
+    @PostMapping("/success")
+    ResponseEntity<GenericResponseDTO<?>> handlePaymentSuccess(
+            @RequestBody String payload,
+            @RequestHeader("Stripe-Signature") String sigHeader
+    ) throws StripeException {
+//        System.out.printf("Stripe payment success. Session ID: %s%n. signature: %s", payload, sigHeader);
+
+        paymentService.processSuccessfulTopUp(payload);
+
+        return ResponseEntity.ok(new GenericResponseDTO<>(
+                true,
+                "Payment successful",
+                null
+        ));
     }
 }

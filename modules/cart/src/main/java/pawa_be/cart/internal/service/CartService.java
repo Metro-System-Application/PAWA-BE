@@ -4,9 +4,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import pawa_be.cart.internal.dto.AddToCartRequest;
-import pawa_be.cart.internal.dto.CartDto;
-import pawa_be.cart.internal.dto.CartItemDto;
+import pawa_be.cart.internal.dto.*;
 import pawa_be.cart.internal.model.CartItemModel;
 import pawa_be.cart.internal.model.CartModel;
 import pawa_be.cart.internal.repository.CartItemRepository;
@@ -21,6 +19,7 @@ import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -37,39 +36,44 @@ public class CartService {
 
     @Transactional
     public CartDto getOrCreateCart(String passengerId) {
-        PassengerModel passenger = findPassenger(passengerId);
-
-        CartModel cart = cartRepository.findByPassengerModel(passenger)
-                .orElseGet(() -> createNewCart(passenger));
+        CartModel cart = cartRepository.findByPassengerModel_PassengerID(passengerId)
+                .orElseGet(() -> createNewCart(passengerId));
 
         return toCartDto(cart);
     }
 
     @Transactional
     public CartDto addToCart(String passengerId, AddToCartRequest request) {
-        PassengerModel passenger = findPassenger(passengerId);
         TicketModel ticketType = findTicketType(request.getTicketType());
 
-        CartModel cart = cartRepository.findByPassengerModel(passenger)
-                .orElseGet(() -> createNewCart(passenger));
+        CartModel cart = cartRepository.findByPassengerModel_PassengerID(passengerId)
+                .orElseGet(() -> createNewCart(passengerId));
 
-        // Create and save the cart item
-        CartItemModel cartItem = new CartItemModel();
-        cartItem.setCart(cart);
-        cartItem.setLineID(request.getLineId());
-        cartItem.setStartStationID(request.getStartStationId());
-        cartItem.setEndStationID(request.getEndStationId());
-        cartItem.setType(ticketType);
+        Optional<CartItemModel> optionalCartItem = cartItemRepository.findByCart_CartIDAndType(
+                cart.getCartID(), ticketType);
+
+        CartItemModel cartItem;
+        if (optionalCartItem.isPresent()) {
+            cartItem = optionalCartItem.get();
+            cartItem.setAmount(cartItem.getAmount() + 1);
+        } else {
+            cartItem = new CartItemModel();
+            cartItem.setCart(cart);
+            cartItem.setLineID(request.getLineId());
+            cartItem.setAmount(1);
+            cartItem.setStartStationID(request.getStartStationId());
+            cartItem.setEndStationID(request.getEndStationId());
+            cartItem.setType(ticketType);
+        }
 
         cartItemRepository.save(cartItem);
-
         return toCartDto(cart);
     }
 
+
     @Transactional
     public CartDto removeFromCart(String passengerId, UUID cartItemId) {
-        PassengerModel passenger = findPassenger(passengerId);
-        CartModel cart = findCart(passenger);
+        CartModel cart = findCart(passengerId);
 
         CartItemModel cartItem = cartItemRepository.findById(cartItemId)
                 .orElseThrow(() -> new NotFoundException("Cart item not found"));
@@ -86,10 +90,26 @@ public class CartService {
 
     @Transactional
     public void clearCart(String passengerId) {
-        PassengerModel passenger = findPassenger(passengerId);
-        CartModel cart = findCart(passenger);
+        CartModel cart = findCart(passengerId);
 
         cartItemRepository.deleteByCart(cart);
+    }
+
+    public ResponseEditCartItemDTO editCartItem(String passengerId, RequestEditCartItemDTO requestEditCartItemDTO) {
+        CartModel cart = cartRepository.findByPassengerModel_PassengerID(passengerId)
+                .orElseThrow(() -> new NotFoundException("Cart not found"));
+
+        CartItemModel item = cartItemRepository.findByCart_CartIDAndCartItemID(cart.getCartID(), requestEditCartItemDTO.getCartItemId())
+                .orElseThrow(() -> new NotFoundException("Cart item not found"));
+
+        item.setAmount(requestEditCartItemDTO.getNewAmount());
+
+        cartItemRepository.save(item);
+        return new ResponseEditCartItemDTO(
+                requestEditCartItemDTO.getCartItemId(),
+                requestEditCartItemDTO.getNewAmount(),
+                item.getType().getPrice()
+        );
     }
 
     public BigDecimal calculateTotalPrice(String passengerId) {
@@ -97,16 +117,9 @@ public class CartService {
         return cartDto.getTotalPrice();
     }
 
-    private PassengerModel findPassenger(String passengerId) {
-        PassengerModel passenger = passengerRepository.findPassengerModelByPassengerID(passengerId);
-        if (passenger == null) {
-            throw new NotFoundException("Passenger not found with ID: " + passengerId);
-        }
-        return passenger;
-    }
 
-    private CartModel findCart(PassengerModel passenger) {
-        return cartRepository.findByPassengerModel(passenger)
+    private CartModel findCart(String passengerId) {
+        return cartRepository.findByPassengerModel_PassengerID(passengerId)
                 .orElseThrow(() -> new NotFoundException("Cart not found for passenger"));
     }
 
@@ -115,8 +128,9 @@ public class CartService {
                 .orElseThrow(() -> new NotFoundException("Ticket type not found: " + ticketType));
     }
 
-    private CartModel createNewCart(PassengerModel passenger) {
+    private CartModel createNewCart(String passengerId) {
         CartModel newCart = new CartModel();
+        PassengerModel passenger = passengerRepository.findPassengerModelByPassengerID(passengerId);
         newCart.setPassengerModel(passenger);
         return cartRepository.save(newCart);
     }
@@ -132,7 +146,7 @@ public class CartService {
                 .collect(Collectors.toList());
 
         BigDecimal totalPrice = itemDtos.stream()
-                .map(CartItemDto::getPrice)
+                .map(dto -> dto.getPrice().multiply(BigDecimal.valueOf(dto.getAmount())))
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
         return CartDto.builder()
@@ -149,6 +163,7 @@ public class CartService {
         return CartItemDto.builder()
                 .cartItemId(item.getCartItemID())
                 .lineId(item.getLineID())
+                .amount(item.getAmount())
                 // Station names would ideally come from an integration with a metro line
                 // service
                 .startStationId(item.getStartStationID())
