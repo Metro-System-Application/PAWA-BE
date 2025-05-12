@@ -207,24 +207,13 @@ public class TicketTypeService {
     /**
      * Get ticket types that a specific passenger is eligible for using their email
      * 
-     * @param email The email of the passenger to check eligibility for
-     * @return List of ticket types the passenger is eligible for
+     * @param email This parameter is kept for backward compatibility but is no
+     *              longer used
+     * @return List of all available ticket types
      */
     public List<TypeDto> getEligibleTicketTypesForPassengerByEmail(String email) {
-        PassengerModel passenger = passengerRepository.findPassengerModelByPassengerEmail(email);
-
-        if (passenger == null) {
-            return getAllTicketTypes();
-        }
-
-        // Get all active ticket types
-        List<TicketModel> allTicketTypes = ticketTypeRepository.findByActiveTrue();
-
-        // Filter based on eligibility
-        return allTicketTypes.stream()
-                .filter(ticketType -> isPassengerEligibleForTicket(passenger, ticketType))
-                .map(this::convertToDto)
-                .collect(Collectors.toList());
+        // Since email field has been removed, we just return all ticket types
+        return getAllTicketTypes();
     }
 
     /**
