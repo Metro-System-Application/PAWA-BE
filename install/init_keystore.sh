@@ -2,7 +2,7 @@
 
 set -e
 
-RESOURCES_FOLDER="application/src/main/resources"
+RESOURCES_FOLDER="/Users/phantrongnguyen/coding/new_etp/PAWA-BE/application/src/main/resources"
 CA_NAME="PAWA_BE_CN"
 
 # Create CA certificate
