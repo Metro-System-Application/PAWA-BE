@@ -18,6 +18,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import pawa_be.infrastructure.common.dto.GenericResponseDTO;
 import pawa_be.insfrastructure.stripe.dto.ResponseCreateStripeSessionDTO;
+import pawa_be.payment.internal.dto.RequestPayCheckoutWithStripeDTO;
 import pawa_be.payment.internal.dto.RequestPurchaseTicketForPassengerDTO;
 import pawa_be.payment.internal.dto.RequestTopUpBalanceDTO;
 import pawa_be.payment.internal.service.PaymentService;
@@ -228,6 +229,23 @@ class PaymentController {
         String passengerEmail = getEmailFromAuthentication(authentication);
 
         ResponseCreateStripeSessionDTO response =  paymentService.createTopUpPaymentSession(passengerId, passengerEmail, topUpBalanceDTO.getPrice(), topUpBalanceDTO.getSuccessUrl(), topUpBalanceDTO.getCancelUrl());
+        return ResponseEntity
+                .status(HttpStatus.PERMANENT_REDIRECT)
+                .body(new GenericResponseDTO<>(
+                        true,
+                        "",
+                        response));
+    }
+
+    @PostMapping("/checkout")
+    ResponseEntity<GenericResponseDTO<?>> checkout(
+            @Parameter(hidden = true) Authentication authentication,
+            @Valid RequestPayCheckoutWithStripeDTO payCheckoutWithStripeDTO
+    ) throws StripeException {
+        String passengerId = getUserIdFromAuthentication(authentication);
+        String passengerEmail = getEmailFromAuthentication(authentication);
+
+        ResponseCreateStripeSessionDTO response =  paymentService.createTicketPaymentSession(passengerId, passengerEmail, payCheckoutWithStripeDTO.getSuccessUrl(), payCheckoutWithStripeDTO.getCancelUrl());
         return ResponseEntity
                 .status(HttpStatus.PERMANENT_REDIRECT)
                 .body(new GenericResponseDTO<>(

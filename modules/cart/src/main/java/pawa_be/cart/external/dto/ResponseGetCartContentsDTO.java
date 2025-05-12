@@ -1,4 +1,4 @@
-package pawa_be.cart.dto;
+package pawa_be.cart.external.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;

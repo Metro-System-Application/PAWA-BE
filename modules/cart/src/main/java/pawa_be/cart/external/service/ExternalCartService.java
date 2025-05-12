@@ -2,15 +2,13 @@ package pawa_be.cart.external.service;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import pawa_be.cart.dto.CartContentDTO;
-import pawa_be.cart.dto.ResponseGetCartContentsDTO;
+import pawa_be.cart.external.dto.CartContentDTO;
+import pawa_be.cart.external.dto.ResponseGetCartContentsDTO;
 import pawa_be.cart.internal.model.CartItemModel;
 import pawa_be.cart.internal.repository.CartItemRepository;
-import pawa_be.cart.internal.repository.CartRepository;
 import pawa_be.cart.internal.service.CartService;
 
 import java.util.List;
-import java.util.UUID;
 
 @Service
 public class ExternalCartService implements IExternalCartService {

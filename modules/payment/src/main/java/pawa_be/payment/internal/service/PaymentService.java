@@ -14,6 +14,9 @@ import org.slf4j.event.Level;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import pawa_be.cart.external.dto.CartContentDTO;
+import pawa_be.cart.external.dto.ResponseGetCartContentsDTO;
+import pawa_be.cart.external.service.IExternalCartService;
 import pawa_be.infrastructure.common.validation.exceptions.NotFoundException;
 import pawa_be.insfrastructure.stripe.dto.*;
 import pawa_be.insfrastructure.stripe.service.IStripeService;
@@ -46,6 +49,9 @@ public class PaymentService {
 
     @Autowired
     IStripeService stripeService;
+
+    @Autowired
+    IExternalCartService externalCartService;
 
     public PurchaseTicketForPassengerWithIdByOperatorResult purchaseTicketForPassengerWithIdByOperator(
             String passengerId,
@@ -106,10 +112,27 @@ public class PaymentService {
     }
 
     public ResponseCreateStripeSessionDTO createTopUpPaymentSession(String userId, String email, Long price, String successUrl, String cancelUrl) throws StripeException {
-        RequestPaymentDataDTO paymentCredentialsDTO = new RequestPaymentDataDTO(userId, email, price);
+        RequestPaymentDataDTO paymentCredentialsDTO = new RequestPaymentDataDTO(userId, email);
         RequestRedirectUrlsDTO redirectData = new RequestRedirectUrlsDTO(successUrl, cancelUrl);
 
-        return stripeService.createTopUpPaymentSession(paymentCredentialsDTO, redirectData);
+        return stripeService.createTopUpPaymentSession(paymentCredentialsDTO, price, redirectData);
+    }
+
+    public ResponseCreateStripeSessionDTO createTicketPaymentSession(String userId, String email, String successUrl, String cancelUrl) throws StripeException {
+        RequestPaymentDataDTO paymentCredentialsDTO = new RequestPaymentDataDTO(userId, email);
+        RequestRedirectUrlsDTO redirectData = new RequestRedirectUrlsDTO(successUrl, cancelUrl);
+        ResponseGetCartContentsDTO cartContents = externalCartService.getCartContents(userId);
+
+        return stripeService.createDirectTicketPaymentSession(
+                paymentCredentialsDTO,
+                redirectData,
+                cartContents.getCartContents().stream()
+                        .map(item -> new LineItemRequestDTO(
+                                item.getName(),
+                                item.getAmountInVND().longValue(),
+                                item.getQuantity()
+                        ))
+                        .toList());
     }
 
     public void processSuccessfulTopUp(String payload) throws StripeException {

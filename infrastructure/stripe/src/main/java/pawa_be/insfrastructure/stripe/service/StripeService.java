@@ -43,7 +43,7 @@ public class StripeService implements IStripeService {
                 .build();
     }
 
-    public ResponseCreateStripeSessionDTO createTopUpPaymentSession(RequestPaymentDataDTO userData, RequestRedirectUrlsDTO redirectData) throws StripeException {
+    public ResponseCreateStripeSessionDTO createTopUpPaymentSession(RequestPaymentDataDTO userData, long price, RequestRedirectUrlsDTO redirectData) throws StripeException {
         SessionCreateParams.Builder sessionBuilder = SessionCreateParams.builder()
                 .setMode(SessionCreateParams.Mode.PAYMENT)
                 .setSuccessUrl(redirectData.getSuccessUrl())
@@ -53,7 +53,7 @@ public class StripeService implements IStripeService {
                                 .setPriceData(
                                         SessionCreateParams.LineItem.PriceData.builder()
                                                 .setCurrency("vnd")
-                                                .setUnitAmount(userData.getPrice())
+                                                .setUnitAmount(price)
                                                 .setProductData(
                                                         SessionCreateParams.LineItem.PriceData.ProductData.builder()
                                                                 .setName("Wallet Top-Up")

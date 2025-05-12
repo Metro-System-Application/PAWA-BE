@@ -19,6 +19,7 @@ import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -48,18 +49,27 @@ public class CartService {
         CartModel cart = cartRepository.findByPassengerModel_PassengerID(passengerId)
                 .orElseGet(() -> createNewCart(passengerId));
 
-        // Create and save the cart item
-        CartItemModel cartItem = new CartItemModel();
-        cartItem.setCart(cart);
-        cartItem.setLineID(request.getLineId());
-        cartItem.setStartStationID(request.getStartStationId());
-        cartItem.setEndStationID(request.getEndStationId());
-        cartItem.setType(ticketType);
+        Optional<CartItemModel> optionalCartItem = cartItemRepository.findByCart_CartIDAndType(
+                cart.getCartID(), ticketType);
+
+        CartItemModel cartItem;
+        if (optionalCartItem.isPresent()) {
+            cartItem = optionalCartItem.get();
+            cartItem.setAmount(cartItem.getAmount() + 1);
+        } else {
+            cartItem = new CartItemModel();
+            cartItem.setCart(cart);
+            cartItem.setLineID(request.getLineId());
+            cartItem.setAmount(1);
+            cartItem.setStartStationID(request.getStartStationId());
+            cartItem.setEndStationID(request.getEndStationId());
+            cartItem.setType(ticketType);
+        }
 
         cartItemRepository.save(cartItem);
-
         return toCartDto(cart);
     }
+
 
     @Transactional
     public CartDto removeFromCart(String passengerId, UUID cartItemId) {
@@ -136,7 +146,7 @@ public class CartService {
                 .collect(Collectors.toList());
 
         BigDecimal totalPrice = itemDtos.stream()
-                .map(CartItemDto::getPrice)
+                .map(dto -> dto.getPrice().multiply(BigDecimal.valueOf(dto.getAmount())))
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
         return CartDto.builder()

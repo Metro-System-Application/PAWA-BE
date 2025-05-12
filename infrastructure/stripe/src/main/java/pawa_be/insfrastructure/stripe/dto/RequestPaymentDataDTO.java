@@ -12,7 +12,4 @@ public class RequestPaymentDataDTO {
 
     @NotNull
     private final String userEmail;
-
-    @NotNull
-    private final Long price;
 }
