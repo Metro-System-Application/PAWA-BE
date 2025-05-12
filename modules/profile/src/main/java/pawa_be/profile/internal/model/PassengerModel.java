@@ -29,6 +29,8 @@ public class PassengerModel {
     @Column(nullable = false)
     private String passengerPhone;
     @Column(nullable = false)
+    private String passengerEmail;
+    @Column(nullable = false)
     private String passengerAddress;
 
 //  This json serialization is only for modifying the date format to DD/MM/YYYY if needed

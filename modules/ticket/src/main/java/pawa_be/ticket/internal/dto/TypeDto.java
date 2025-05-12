@@ -32,4 +32,7 @@ public class TypeDto {
 
     @Schema
     private Duration expiryInterval;
+
+    @Schema(description = "Indicates whether this ticket type is currently active")
+    private Boolean active;
 }
