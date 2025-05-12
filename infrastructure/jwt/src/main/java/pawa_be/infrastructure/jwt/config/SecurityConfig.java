@@ -27,7 +27,8 @@ public class SecurityConfig {
     private AuthRequestFilter authRequestFilter;
 
     @Bean
-    public AuthenticationManager authenticationManager(AuthenticationConfiguration authenticationConfiguration) throws Exception {
+    public AuthenticationManager authenticationManager(AuthenticationConfiguration authenticationConfiguration)
+            throws Exception {
         return authenticationConfiguration.getAuthenticationManager();
     }
 
@@ -56,19 +57,19 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
                 .csrf(AbstractHttpConfigurer::disable)
-                .requiresChannel(channel ->
-                        channel.anyRequest().requiresSecure()
-                )
+                .requiresChannel(channel -> channel.anyRequest().requiresSecure())
                 .authorizeHttpRequests((requests) -> requests
-                        .requestMatchers("/auth/register", "/auth/login", "/auth/validate-existing-email", "/auth/google-signup-url", "/auth/google", "/auth/fill-google-profile").permitAll()
+                        .requestMatchers("/auth/register", "/auth/login", "/auth/validate-existing-email",
+                                "/auth/google-signup-url", "/auth/google", "/auth/fill-google-profile")
+                        .permitAll()
                         .requestMatchers("/auth/update-my-info").authenticated()
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
                         .requestMatchers("/profile/**").authenticated()
                         .requestMatchers("/ticket/*").permitAll()
                         .requestMatchers("/payment/purchase-ticket/**").permitAll()
                         .requestMatchers("/payment/top-up-balance").authenticated()
-                        .anyRequest().authenticated()
-                );
+                        .requestMatchers("/cart/**").authenticated()
+                        .anyRequest().authenticated());
 
         http.addFilterBefore(authRequestFilter,
                 UsernamePasswordAuthenticationFilter.class);
