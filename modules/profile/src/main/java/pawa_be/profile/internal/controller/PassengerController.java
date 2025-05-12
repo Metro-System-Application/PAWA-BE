@@ -32,7 +32,7 @@ import static pawa_be.infrastructure.jwt.misc.Miscellaneous.getUserIdFromAuthent
 class PassengerController {
 
     @Autowired
-    private final PassengerService passengerService;
+    private PassengerService passengerService;
 
     @GetMapping("/my-info")
     @Operation(

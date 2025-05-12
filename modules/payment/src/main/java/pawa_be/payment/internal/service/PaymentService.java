@@ -15,16 +15,21 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import pawa_be.infrastructure.common.validation.exceptions.NotFoundException;
+import pawa_be.insfrastructure.stripe.dto.*;
+import pawa_be.insfrastructure.stripe.service.IStripeService;
 import pawa_be.payment.internal.dto.RequestPurchaseTicketForPassengerDTO;
 import pawa_be.payment.internal.dto.RequestPurchaseTicketForPassengerTicketDTO;
 import pawa_be.payment.internal.dto.ResponsePurchaseTicketForPassengerDTO;
 import pawa_be.payment.internal.model.EwalletModel;
+import pawa_be.payment.internal.model.TopUpTransactionModel;
 import pawa_be.payment.internal.repository.EWalletRepository;
+import pawa_be.payment.internal.repository.TopUpTransactionRepository;
 import pawa_be.payment.internal.service.result.PurchaseTicketForPassengerWithIdByOperatorResult;
 import pawa_be.payment.internal.service.result.PurchaseTicketForPassengerWithIdByOperatorResultType;
 import pawa_be.ticket.external.service.IExternalTicketService;
 import pawa_be.ticket.internal.model.TicketModel;
 
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.List;
 
@@ -34,36 +39,13 @@ public class PaymentService {
     IExternalTicketService externalTicketService;
 
     @Autowired
+    TopUpTransactionRepository topUpTransactionRepository;
+
+    @Autowired
     EWalletRepository eWalletRepository;
 
-//    public PaymentService(
-//            @Value("${stripe.publishable_key}") String stripeSecretKey
-//    ) throws StripeException {
-//        Stripe.apiKey = stripeSecretKey;
-//
-//        ProductCreateParams productParams =
-//                ProductCreateParams.builder()
-//                        .setName("Starter Subscription")
-//                        .setDescription("$12/Month subscription")
-//                        .build();
-//        Product product = Product.create(productParams);
-//        System.out.println("Success! Here is your starter subscription product id: " + product.getId());
-//
-//        PriceCreateParams params =
-//                PriceCreateParams
-//                        .builder()
-//                        .setProduct(product.getId())
-//                        .setCurrency("usd")
-//                        .setUnitAmount(1200L)
-//                        .setRecurring(
-//                                PriceCreateParams.Recurring
-//                                        .builder()
-//                                        .setInterval(PriceCreateParams.Recurring.Interval.MONTH)
-//                                        .build())
-//                        .build();
-//        Price price = Price.create(params);
-//        System.out.println("Success! Here is your starter subscription price id: " + price.getId());
-//    }
+    @Autowired
+    IStripeService stripeService;
 
     public PurchaseTicketForPassengerWithIdByOperatorResult purchaseTicketForPassengerWithIdByOperator(
             String passengerId,
@@ -121,6 +103,31 @@ public class PaymentService {
         eWalletRepository.save(passengerEwallet);
 
         return balance;
+    }
+
+    public ResponseCreateStripeSessionDTO createTopUpPaymentSession(String userId, String email, Long price, String successUrl, String cancelUrl) throws StripeException {
+        RequestPaymentDataDTO paymentCredentialsDTO = new RequestPaymentDataDTO(userId, email, price);
+        RequestRedirectUrlsDTO redirectData = new RequestRedirectUrlsDTO(successUrl, cancelUrl);
+
+        return stripeService.createTopUpPaymentSession(paymentCredentialsDTO, redirectData);
+    }
+
+    public void processSuccessfulTopUp(String payload) throws StripeException {
+        ResponseProcessSuccessfulTopUpDTO dto = stripeService.processSuccessfulTopUp(payload);
+
+        BigDecimal amountInVND = BigDecimal.valueOf(dto.getAmount());
+
+        EwalletModel wallet = eWalletRepository.findByPassengerModel_PassengerID(dto.getUserid())
+                .orElseThrow(() -> new IllegalArgumentException("Ewallet not found for user: " + dto.getUserid()));
+
+        TopUpTransactionModel transaction = new TopUpTransactionModel();
+        transaction.setAmount(amountInVND);
+        transaction.setEwallet(wallet);
+
+        topUpTransactionRepository.save(transaction);
+
+        wallet.setBalance(wallet.getBalance().add(amountInVND));
+        eWalletRepository.save(wallet);
     }
 }
 
