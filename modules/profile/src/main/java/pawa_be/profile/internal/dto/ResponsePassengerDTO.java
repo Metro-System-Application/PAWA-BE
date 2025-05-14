@@ -15,6 +15,7 @@ import java.time.LocalDate;
 @Setter
 @AllArgsConstructor
 public class ResponsePassengerDTO {
+    private String passengerEmail;
     private String passengerFirstName;
     private String passengerMiddleName;
     private String passengerLastName;

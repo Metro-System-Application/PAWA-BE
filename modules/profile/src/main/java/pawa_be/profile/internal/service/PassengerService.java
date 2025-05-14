@@ -45,10 +45,11 @@ public class PassengerService {
         passengerRepository.save(passenger);
     }
 
-    public ResponsePassengerDTO getCurrentPassengerById(String passengerId) {
+    public ResponsePassengerDTO getCurrentPassengerById(String passengerId, String passengerEmail) {
         PassengerModel passenger = passengerRepository.findPassengerModelByPassengerID(passengerId);
 
         return new ResponsePassengerDTO(
+                passengerEmail,
                 passenger.getPassengerFirstName(),
                 passenger.getPassengerMiddleName(),
                 passenger.getPassengerLastName(),
