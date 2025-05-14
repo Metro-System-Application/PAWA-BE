@@ -193,6 +193,23 @@ class UserAuthController {
                 .body(new GenericResponseDTO<>(true, "User logged in successfully", responseDto));
     }
 
+    @PostMapping("/logout")
+    public ResponseEntity<GenericResponseDTO<?>> logout(HttpServletResponse response) {
+        Cookie logoutCookie = HttpOnlyCookieConfig.createCookie(
+                UserAuthConfig.USER_AUTH_COOKIE_NAME,
+                ""
+        );
+        logoutCookie.setMaxAge(0);
+        logoutCookie.setPath("/");
+        logoutCookie.setAttribute("SameSite", "None");
+
+        response.addCookie(logoutCookie);
+
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .body(new GenericResponseDTO<>(true, "User logged out successfully", null));
+    }
+
     @PutMapping("/update-my-info")
     @Operation(summary = "Update user's email and/or password",
             description = "Authenticated users can update their email and password. If a new email is already in use, the request will fail.")

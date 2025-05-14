@@ -69,7 +69,7 @@ public class SecurityConfig {
                 }))
 //                .requiresChannel(channel -> channel.anyRequest().requiresSecure())
                 .authorizeHttpRequests((requests) -> requests
-                        .requestMatchers("/auth/register", "/auth/login", "/auth/validate-existing-email",
+                        .requestMatchers("/auth/register", "/auth/login", "/auth/logout", "/auth/validate-existing-email",
                                 "/auth/google-signup-url", "/auth/google", "/auth/fill-google-profile")
                         .permitAll()
                         .requestMatchers("/auth/update-my-info").authenticated()
