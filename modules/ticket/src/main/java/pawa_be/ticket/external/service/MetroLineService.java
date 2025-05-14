@@ -19,7 +19,7 @@ import java.util.List;
 public class MetroLineService {
 
     private final RestTemplate restTemplate;
-    private static final String AUTH_EMAIL = "OPWA_memeber@email.com";
+    private static final String AUTH_EMAIL = "huuquoc7603@gmail.com";
 
     // Token caching mechanism
     private String cachedToken;
@@ -31,7 +31,8 @@ public class MetroLineService {
     public MetroLineService() {
         this.restTemplate = new RestTemplate();
     }
-    private String authenticate() {
+
+    public String authenticate() {
         try {
             if (cachedToken != null && tokenExpiration != null && LocalDateTime.now().isBefore(tokenExpiration)) {
                 return cachedToken;
@@ -83,7 +84,6 @@ public class MetroLineService {
             headers.set("Accept", MediaType.APPLICATION_JSON_VALUE);
 
             HttpEntity<Void> requestEntity = new HttpEntity<>(headers);
-
 
             try {
                 ResponseEntity<String> rawResponse = restTemplate.exchange(
