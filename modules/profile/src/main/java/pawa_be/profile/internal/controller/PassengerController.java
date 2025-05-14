@@ -22,6 +22,7 @@ import pawa_be.profile.internal.dto.*;
 import pawa_be.profile.internal.enumeration.ImageType;
 import pawa_be.profile.internal.service.PassengerService;
 
+import static pawa_be.infrastructure.jwt.misc.Miscellaneous.getEmailFromAuthentication;
 import static pawa_be.infrastructure.jwt.misc.Miscellaneous.getUserIdFromAuthentication;
 
 @SecurityRequirement(name = "user_auth")
@@ -51,7 +52,8 @@ class PassengerController {
             @Parameter(hidden = true) Authentication authentication) {
 
         final String passengerId = getUserIdFromAuthentication(authentication);
-        ResponsePassengerDTO passenger = passengerService.getCurrentPassengerById(passengerId);
+        final String passengerEmail = getEmailFromAuthentication(authentication);
+        ResponsePassengerDTO passenger = passengerService.getCurrentPassengerById(passengerId, passengerEmail);
         return ResponseEntity.ok(new GenericResponseDTO<>(true, "Passenger info retrieved", passenger));
     }
 
