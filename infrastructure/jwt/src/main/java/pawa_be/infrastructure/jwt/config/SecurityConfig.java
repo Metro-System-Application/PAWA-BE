@@ -12,12 +12,14 @@ import org.springframework.security.config.annotation.method.configuration.Enabl
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
-import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
+import org.springframework.web.cors.CorsConfiguration;
 import pawa_be.infrastructure.jwt.filter.AuthRequestFilter;
+
+import java.util.List;
 
 @Configuration
 @EnableWebSecurity
@@ -57,7 +59,15 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
                 .csrf(AbstractHttpConfigurer::disable)
-                .requiresChannel(channel -> channel.anyRequest().requiresSecure())
+                .cors(cors -> cors.configurationSource(_ -> {
+                    CorsConfiguration config = new CorsConfiguration();
+                    config.setAllowedOrigins(List.of("http://localhost:3000")); // Allow frontend origin
+                    config.setAllowedMethods(List.of("*")); // Allow specific HTTP methods
+                    config.setAllowedHeaders(List.of("*")); // Allow all headers
+                    config.setAllowCredentials(true); // Allow credentials (e.g., cookies)
+                    return config;
+                }))
+//                .requiresChannel(channel -> channel.anyRequest().requiresSecure())
                 .authorizeHttpRequests((requests) -> requests
                         .requestMatchers("/auth/register", "/auth/login", "/auth/validate-existing-email",
                                 "/auth/google-signup-url", "/auth/google", "/auth/fill-google-profile")
