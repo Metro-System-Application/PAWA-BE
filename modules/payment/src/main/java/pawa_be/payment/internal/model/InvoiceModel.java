@@ -3,7 +3,6 @@ package pawa_be.payment.internal.model;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.UpdateTimestamp;
 import pawa_be.profile.internal.model.PassengerModel;
 
 import java.math.BigDecimal;
@@ -11,7 +10,7 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Entity
-@Table(name="invoice")
+@Table(name = "invoice")
 @Data
 public class InvoiceModel {
     @Id
@@ -19,7 +18,7 @@ public class InvoiceModel {
     private UUID invoiceID;
 
     @ManyToOne
-    @JoinColumn(name="passenger_id", referencedColumnName = "passengerID", nullable = false, updatable = false)
+    @JoinColumn(name = "passenger_id", referencedColumnName = "passengerID", nullable = false, updatable = false)
     private PassengerModel passengerModel;
 
     @Column(nullable = false)
@@ -28,10 +27,7 @@ public class InvoiceModel {
     @Column(nullable = false)
     private BigDecimal totalPrice;
 
+    // Since invoices are created after payment, they are purchased at creation time
     @CreationTimestamp
-    @Column(updatable = false)
-    private LocalDateTime createdAt;
-
-    @UpdateTimestamp
     private LocalDateTime purchasedAt;
 }

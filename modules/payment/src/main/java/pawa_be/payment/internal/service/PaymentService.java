@@ -1,20 +1,8 @@
 package pawa_be.payment.internal.service;
 
-import com.stripe.Stripe;
 import com.stripe.exception.StripeException;
-import com.stripe.model.Price;
-import com.stripe.model.Product;
-import com.stripe.param.PriceCreateParams;
-import com.stripe.param.ProductCreateParams;
-import jakarta.annotation.PostConstruct;
-import jakarta.validation.Valid;
-import jakarta.validation.constraints.NotEmpty;
-import lombok.NoArgsConstructor;
-import org.slf4j.event.Level;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import pawa_be.cart.external.dto.CartContentDTO;
 import pawa_be.cart.external.dto.ResponseGetCartContentsDTO;
 import pawa_be.cart.external.service.IExternalCartService;
 import pawa_be.infrastructure.common.validation.exceptions.NotFoundException;
@@ -27,12 +15,10 @@ import pawa_be.payment.internal.model.EwalletModel;
 import pawa_be.payment.internal.model.TopUpTransactionModel;
 import pawa_be.payment.internal.repository.EWalletRepository;
 import pawa_be.payment.internal.repository.TopUpTransactionRepository;
-import pawa_be.payment.internal.service.result.PurchaseTicketForPassengerWithIdByOperatorResult;
-import pawa_be.payment.internal.service.result.PurchaseTicketForPassengerWithIdByOperatorResultType;
+import pawa_be.payment.internal.service.result.PurchaseWithEwalletResult;
+import pawa_be.payment.internal.service.result.PurchaseWithEWalletResultType;
 import pawa_be.ticket.external.service.IExternalTicketService;
-import pawa_be.ticket.internal.model.TicketModel;
 
-import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.List;
 
@@ -53,7 +39,7 @@ public class PaymentService {
     @Autowired
     IExternalCartService externalCartService;
 
-    public PurchaseTicketForPassengerWithIdByOperatorResult purchaseTicketForPassengerWithIdByOperator(
+    public PurchaseWithEwalletResult purchaseTicketForPassengerWithIdByOperator(
             String passengerId,
             RequestPurchaseTicketForPassengerDTO requestPurchaseTicketForPassengerDTO) {
         EwalletModel passengerEwallet = eWalletRepository
@@ -74,11 +60,12 @@ public class PaymentService {
                 })
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
+        // TODO: add tickets to the user + create invoices
         final BigDecimal balance = passengerEwallet.getBalance();
         final int isEnoughBalance = balance.compareTo(totalPrice);
         if (isEnoughBalance < 0) {
-            return new PurchaseTicketForPassengerWithIdByOperatorResult(
-                    PurchaseTicketForPassengerWithIdByOperatorResultType.INSUFFICIENT_BALANCE,
+            return new PurchaseWithEwalletResult(
+                    PurchaseWithEWalletResultType.INSUFFICIENT_BALANCE,
                     null
             );
         }
@@ -88,8 +75,8 @@ public class PaymentService {
 
         eWalletRepository.save(passengerEwallet);
 
-        return new PurchaseTicketForPassengerWithIdByOperatorResult(
-                PurchaseTicketForPassengerWithIdByOperatorResultType.SUCCESS,
+        return new PurchaseWithEwalletResult(
+                PurchaseWithEWalletResultType.SUCCESS,
                 new ResponsePurchaseTicketForPassengerDTO(remainingBalance)
         );
     }
@@ -151,6 +138,43 @@ public class PaymentService {
 
         wallet.setBalance(wallet.getBalance().add(amountInVND));
         eWalletRepository.save(wallet);
+    }
+
+    public PurchaseWithEwalletResult payForCheckoutWithEWallet(String passengerId) {
+        EwalletModel passengerEwallet = eWalletRepository
+                .findByPassengerModel_PassengerID(passengerId)
+                .orElseThrow(
+                        () -> new NotFoundException(
+                                String.format("Passenger with ID '%s' not found", passengerId)
+                        )
+                );
+
+        ResponseGetCartContentsDTO cartContents = externalCartService.getCartContents(passengerId);
+        BigDecimal price = cartContents.getCartContents().stream().map(ticket -> {
+                    BigDecimal curPrice = ticket.getAmountInVND();
+                    return curPrice.multiply(BigDecimal.valueOf(ticket.getQuantity()));
+                })
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        final BigDecimal balance = passengerEwallet.getBalance();
+        final int isEnoughBalance = balance.compareTo(price);
+        if (isEnoughBalance < 0) {
+            return new PurchaseWithEwalletResult(
+                    PurchaseWithEWalletResultType.INSUFFICIENT_BALANCE,
+                    null
+            );
+        }
+
+        final BigDecimal remainingBalance = balance.subtract(balance);
+        passengerEwallet.setBalance(remainingBalance);
+
+        // TODO: add tickets to the user + create invoices
+        eWalletRepository.save(passengerEwallet);
+
+        return new PurchaseWithEwalletResult(
+                PurchaseWithEWalletResultType.SUCCESS,
+                new ResponsePurchaseTicketForPassengerDTO(remainingBalance)
+        );
     }
 }
 

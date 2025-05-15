@@ -22,14 +22,14 @@ import pawa_be.payment.internal.dto.RequestPayCheckoutWithStripeDTO;
 import pawa_be.payment.internal.dto.RequestPurchaseTicketForPassengerDTO;
 import pawa_be.payment.internal.dto.RequestTopUpBalanceDTO;
 import pawa_be.payment.internal.service.PaymentService;
-import pawa_be.payment.internal.service.result.PurchaseTicketForPassengerWithIdByOperatorResult;
-import pawa_be.payment.internal.service.result.PurchaseTicketForPassengerWithIdByOperatorResultType;
+import pawa_be.payment.internal.service.result.PurchaseWithEwalletResult;
+import pawa_be.payment.internal.service.result.PurchaseWithEWalletResultType;
 
 import java.math.BigDecimal;
 
 import static pawa_be.infrastructure.jwt.misc.Miscellaneous.getEmailFromAuthentication;
 import static pawa_be.infrastructure.jwt.misc.Miscellaneous.getUserIdFromAuthentication;
-import static pawa_be.payment.internal.service.result.PurchaseTicketForPassengerWithIdByOperatorResultType.INSUFFICIENT_BALANCE;
+import static pawa_be.payment.internal.service.result.PurchaseWithEWalletResultType.INSUFFICIENT_BALANCE;
 
 @RestController
 @RequestMapping("/payment")
@@ -122,28 +122,13 @@ class PaymentController {
             @Parameter(description = "Details of the ticket(s) to be purchased")
             RequestPurchaseTicketForPassengerDTO requestPurchaseTicketForPassengerDTO) {
 
-        PurchaseTicketForPassengerWithIdByOperatorResult result =
+        PurchaseWithEwalletResult result =
                 paymentService.purchaseTicketForPassengerWithIdByOperator(
                         passengerId,
                         requestPurchaseTicketForPassengerDTO
                 );
 
-        PurchaseTicketForPassengerWithIdByOperatorResultType resultType = result.getStatus();
-        if (resultType == INSUFFICIENT_BALANCE) {
-            return ResponseEntity
-                    .status(HttpStatus.PAYMENT_REQUIRED)
-                    .body(new GenericResponseDTO<>(
-                            false,
-                            "Insufficient balance",
-                            null));
-        }
-
-        return ResponseEntity
-                .ok()
-                .body(new GenericResponseDTO<>(
-                        true,
-                        "Purchase was successful",
-                        result.getRemainingBalance()));
+        return handleEwalletPyamentResult(result);
     }
 
     @Operation(
@@ -268,5 +253,37 @@ class PaymentController {
                 "Payment successful",
                 null
         ));
+    }
+
+    @PostMapping("/checkout/ewallet")
+    ResponseEntity<GenericResponseDTO<?>> purchaseTicketForPassengerWithId(
+            @Parameter(hidden = true) Authentication authentication) {
+        String passengerId = getUserIdFromAuthentication(authentication);
+
+        PurchaseWithEwalletResult result =
+                paymentService.payForCheckoutWithEWallet(
+                        passengerId
+                );
+
+        return handleEwalletPyamentResult(result);
+    }
+
+    private ResponseEntity<GenericResponseDTO<?>> handleEwalletPyamentResult(PurchaseWithEwalletResult result) {
+        PurchaseWithEWalletResultType resultType = result.getStatus();
+        if (resultType == INSUFFICIENT_BALANCE) {
+            return ResponseEntity
+                    .status(HttpStatus.PAYMENT_REQUIRED)
+                    .body(new GenericResponseDTO<>(
+                            false,
+                            "Insufficient balance",
+                            null));
+        }
+
+        return ResponseEntity
+                .ok()
+                .body(new GenericResponseDTO<>(
+                        true,
+                        "Purchase was successful",
+                        result.getRemainingBalance()));
     }
 }
