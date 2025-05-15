@@ -41,6 +41,10 @@ public class PassengerService {
             passenger.setPassengerAddress(updatedInfo.getPassengerAddress());
         }
 
+        if (updatedInfo.getStudentID() != null) {
+            passenger.setStudentID(updatedInfo.getStudentID());
+        }
+
         passenger.setUpdatedAt(LocalDateTime.now());
         passengerRepository.save(passenger);
     }
