@@ -45,11 +45,5 @@ public class InvoiceItemModel {
     private int duration;
 
     @CreationTimestamp
-    @Column(updatable = false)
-    private LocalDateTime createdAt;
-
-    // Since invoice items are created after payment, they are purchased at creation
-    // time
-    @CreationTimestamp
     private LocalDateTime purchasedAt;
 }

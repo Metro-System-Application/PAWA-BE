@@ -15,6 +15,4 @@ public interface IExternalInvoiceService {
     InvoiceDTO getInvoiceById(UUID invoiceId);
     List<InvoiceDTO> getInvoicesByPassengerId(String passengerId);
     List<InvoiceDTO> getInvoicesByEmail(String email);
-    @Deprecated
-    InvoiceDTO markInvoiceAsPurchased(UUID invoiceId);
 }

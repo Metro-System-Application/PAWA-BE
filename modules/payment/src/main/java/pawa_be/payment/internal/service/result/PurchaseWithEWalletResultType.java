@@ -1,6 +1,6 @@
 package pawa_be.payment.internal.service.result;
 
-public enum PurchaseTicketForPassengerWithIdByOperatorResultType {
+public enum PurchaseWithEWalletResultType {
     INSUFFICIENT_BALANCE,
     SUCCESS
 }

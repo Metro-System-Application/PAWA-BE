@@ -17,7 +17,6 @@ public class InvoiceDTO {
     private String passengerID;
     private String email;
     private BigDecimal totalPrice;
-    private LocalDateTime createdAt;
     private LocalDateTime purchasedAt;
     private List<InvoiceItemDTO> items;
     

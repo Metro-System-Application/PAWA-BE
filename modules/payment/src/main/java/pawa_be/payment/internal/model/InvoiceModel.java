@@ -27,10 +27,6 @@ public class InvoiceModel {
     @Column(nullable = false)
     private BigDecimal totalPrice;
 
-    @CreationTimestamp
-    @Column(updatable = false)
-    private LocalDateTime createdAt;
-
     // Since invoices are created after payment, they are purchased at creation time
     @CreationTimestamp
     private LocalDateTime purchasedAt;

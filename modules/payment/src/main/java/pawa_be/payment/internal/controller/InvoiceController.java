@@ -79,18 +79,6 @@ public class InvoiceController {
                 return ResponseEntity.ok(invoices);
         }
 
-        @Operation(summary = "Mark invoice as purchased (Deprecated)", description = "This endpoint is deprecated as invoices are now created with purchased status after successful payment")
-        @ApiResponses(value = {
-                        @ApiResponse(responseCode = "200", description = "Invoice status retrieved", content = @Content(schema = @Schema(implementation = InvoiceDTO.class))),
-                        @ApiResponse(responseCode = "404", description = "Invoice not found")
-        })
-        @PutMapping("/{invoiceId}/purchase")
-        @Deprecated
-        public ResponseEntity<InvoiceDTO> markInvoiceAsPurchased(@PathVariable UUID invoiceId) {
-                InvoiceDTO updatedInvoice = invoiceService.markInvoiceAsPurchased(invoiceId);
-                return ResponseEntity.ok(updatedInvoice);
-        }
-
         @Operation(summary = "Get invoices by email", description = "Retrieves all invoices associated with the provided email address")
         @ApiResponses(value = {
                         @ApiResponse(responseCode = "200", description = "Invoices retrieved successfully", content = @Content(schema = @Schema(implementation = List.class)))

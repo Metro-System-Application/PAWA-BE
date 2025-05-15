@@ -128,27 +128,6 @@ public class InvoiceService {
     }
 
     /**
-     * Update or confirm invoice purchase status if needed
-     * This is kept for backward compatibility but is not needed in the new flow
-     * since invoices are created after payment is already successful
-     *
-     * @param invoiceId ID of the invoice
-     * @return Updated invoice
-     */
-    @Transactional
-    @Deprecated
-    public InvoiceDTO markInvoiceAsPurchased(UUID invoiceId) {
-        InvoiceModel invoiceModel = invoiceRepository.findByInvoiceID(invoiceId)
-                .orElseThrow(() -> new NotFoundException(String.format("Invoice with ID '%s' not found", invoiceId)));
-
-        // In the new implementation, this should be a no-op as invoices
-        // are already marked as purchased at creation time
-        // But we keep this method for backward compatibility
-
-        return convertToInvoiceDTO(invoiceModel);
-    }
-
-    /**
      * Helper method to convert InvoiceModel to InvoiceDTO with items
      */
     private InvoiceDTO convertToInvoiceDTO(InvoiceModel invoiceModel) {
@@ -174,7 +153,6 @@ public class InvoiceService {
                 invoiceModel.getPassengerModel().getPassengerID(),
                 invoiceModel.getEmail(),
                 invoiceModel.getTotalPrice(),
-                invoiceModel.getCreatedAt(),
                 invoiceModel.getPurchasedAt(),
                 itemDTOs);
     }

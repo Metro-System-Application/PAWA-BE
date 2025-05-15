@@ -4,11 +4,9 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import pawa_be.payment.internal.dto.ResponsePurchaseTicketForPassengerDTO;
 
-import java.math.BigDecimal;
-
 @Getter
 @AllArgsConstructor
-public class PurchaseTicketForPassengerWithIdByOperatorResult {
-    final PurchaseTicketForPassengerWithIdByOperatorResultType status;
+public class PurchaseWithEwalletResult {
+    final PurchaseWithEWalletResultType status;
     final ResponsePurchaseTicketForPassengerDTO remainingBalance;
 }

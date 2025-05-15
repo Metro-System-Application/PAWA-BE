@@ -32,11 +32,6 @@ public class ExternalInvoiceService implements IExternalInvoiceService {
     }
 
     @Override
-    public InvoiceDTO markInvoiceAsPurchased(UUID invoiceId) {
-        return invoiceService.markInvoiceAsPurchased(invoiceId);
-    }
-
-    @Override
     public List<InvoiceDTO> getInvoicesByEmail(String email) {
         return invoiceService.getInvoicesByEmail(email);
     }
