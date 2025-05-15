@@ -17,5 +17,8 @@ public class RequestUpdatePassengerDTO {
     @NotBlank
     @Pattern(regexp = "^[" + RegexConstants.VIETNAMESE_LETTERS + "0-9\\s,./-]+$", message = "Address contains invalid characters, must contain only letters, numbers, spaces and (,), (-), (.) or (/)")
     private String passengerAddress;
+
+    @Pattern(regexp = "^[a-zA-Z0-9]{0,15}$", message = "Student ID must be alphanumeric and max 15 characters")
+    private String studentID;
 }
 
