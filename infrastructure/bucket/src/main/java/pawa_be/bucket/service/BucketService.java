@@ -98,6 +98,8 @@ public class BucketService implements IBucketService {
             byte[] imageBytes = byteArrayOutputStream.toByteArray();
 
             return Base64.getEncoder().encodeToString(imageBytes);
+        } catch (NoSuchKeyException e) {
+            throw new RuntimeException("File not found in bucket: " + fileName, e);
         } catch (IOException e) {
             throw new RuntimeException("Failed to read file from MinIO", e);
         }
@@ -105,11 +107,15 @@ public class BucketService implements IBucketService {
 
     @Override
     public void removeFile(String fileKey) {
-        s3Client.deleteObject(
-                DeleteObjectRequest.builder()
-                        .bucket(bucketName)
-                        .key(fileKey)
-                        .build()
-        );
+        try {
+            s3Client.deleteObject(
+                    DeleteObjectRequest.builder()
+                            .bucket(bucketName)
+                            .key(fileKey)
+                            .build()
+            );
+        } catch (Exception e) {
+            System.out.println(e.getMessage());
+        }
     }
 }
