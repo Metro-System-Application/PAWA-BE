@@ -17,8 +17,8 @@ public class RequestUpdateUserDTO {
 
     @Size(min = 8, message = "Password size must be from 8 characters")
     @Pattern(
-            regexp = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@#$%!,.]).+$",
-            message = "Password must contain uppercase, lowercase, digit, and special character ('@', '#', '$', '%', '!', ',', '.')"
+            regexp = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@#$%]).+$",
+            message = "Password must contain uppercase, lowercase, digit, and special character ('@', '#', '$', '%')"
     )
     private String password;
 }
