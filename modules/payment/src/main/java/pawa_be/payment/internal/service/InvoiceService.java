@@ -36,7 +36,7 @@ public class InvoiceService {
      * @return Response with created invoice ID
      */
     @Transactional
-    public ResponseCreateInvoiceDTO createInvoice(RequestCreateInvoiceDTO requestCreateInvoiceDTO) {
+    public ResponseCreateInvoiceDTO createInvoice(RequestCreateInvoiceDTO requestCreateInvoiceDTO, String transactionId) {
         // Get passenger by ID
         PassengerModel passengerModel = passengerRepository
                 .findPassengerModelByPassengerID(requestCreateInvoiceDTO.getPassengerId());
@@ -50,6 +50,9 @@ public class InvoiceService {
         InvoiceModel invoiceModel = new InvoiceModel();
         invoiceModel.setPassengerModel(passengerModel);
         invoiceModel.setEmail(requestCreateInvoiceDTO.getEmail());
+        if (transactionId != null) {
+            invoiceModel.setStripeId(transactionId);
+        }
         invoiceModel.setTotalPrice(totalPrice);
         // Both createdAt and purchasedAt will be set by @CreationTimestamp
 

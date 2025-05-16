@@ -3,6 +3,7 @@ package pawa_be.payment.internal.model;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
+import pawa_be.infrastructure.common.validation.StripeIdEncryptor;
 import pawa_be.profile.internal.model.PassengerModel;
 
 import java.math.BigDecimal;
@@ -16,6 +17,9 @@ public class InvoiceModel {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID invoiceID;
+
+    @Convert(converter = StripeIdEncryptor.class)
+    private String stripeId;
 
     @ManyToOne
     @JoinColumn(name = "passenger_id", referencedColumnName = "passengerID", updatable = false)

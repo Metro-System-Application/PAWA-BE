@@ -3,6 +3,7 @@ package pawa_be.payment.internal.model;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import lombok.*;
+import pawa_be.infrastructure.common.validation.StripeIdEncryptor;
 
 import java.math.BigDecimal;
 import java.util.UUID;
@@ -15,7 +16,7 @@ public class TopUpTransactionModel {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID transactionID;
 
-    @NotBlank
+    @Convert(converter = StripeIdEncryptor.class)
     private String stripeId;
 
     @Column(nullable = false)

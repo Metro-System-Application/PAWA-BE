@@ -18,7 +18,7 @@ public class ExternalInvoiceService implements IExternalInvoiceService {
 
     @Override
     public ResponseCreateInvoiceDTO createInvoice(RequestCreateInvoiceDTO requestCreateInvoiceDTO) {
-        return invoiceService.createInvoice(requestCreateInvoiceDTO);
+        return invoiceService.createInvoice(requestCreateInvoiceDTO, null);
     }
 
     @Override

@@ -105,7 +105,8 @@ public class PaymentService {
                         passengerId,
                         "example@example.com", // TODO: remove from here ??
                         detailedItems
-                )
+                ),
+                null
         );
 
         return new PurchaseWithEwalletResult(
@@ -230,7 +231,8 @@ public class PaymentService {
                                 dto.getUserid(),
                                 dto.getUserEmail(),
                                 detailedItems
-                        )
+                        ),
+                        dto.getTransactionId()
                 );
 
                 if (dto.isFromCart()) {
@@ -291,7 +293,8 @@ public class PaymentService {
                         passengerId,
                         email,
                         detailedItems
-                )
+                ),
+                null
         );
 
         externalCartService.cleanCart(passengerId);
