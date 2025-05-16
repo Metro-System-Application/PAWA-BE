@@ -162,19 +162,31 @@ public class ScheduleService {
             
             HttpEntity<Void> requestEntity = new HttpEntity<>(headers);
             
-            ResponseEntity<String> response = restTemplate.exchange(
+            restTemplate.exchange(
                     url,
                     HttpMethod.GET,
                     requestEntity,
                     String.class);
                     
-            if (response.getStatusCode() != HttpStatus.OK) {
-                throw new RuntimeException("Invalid " + position + " station ID: " + stationId);
+        } catch (HttpClientErrorException e) {
+            // Extract the actual message from the error response
+            String responseBody = e.getResponseBodyAsString();
+            if (responseBody != null && responseBody.contains("message")) {
+                try {
+                    // Try to extract the message from JSON
+                    int startIndex = responseBody.indexOf("\"message\":\"") + 11;
+                    int endIndex = responseBody.indexOf("\"", startIndex);
+                    if (startIndex > 10 && endIndex > startIndex) {
+                        String errorMessage = responseBody.substring(startIndex, endIndex);
+                        throw new RuntimeException(errorMessage);
+                    }
+                } catch (Exception ex) {
+                    // If we can't parse it, just use a generic message
+                }
             }
-        } catch (HttpClientErrorException.NotFound e) {
             throw new RuntimeException("Invalid " + position + " station ID: " + stationId);
         } catch (Exception e) {
-            throw new RuntimeException("Error verifying " + position + " station: " + e.getMessage());
+            throw new RuntimeException("Station with id " + stationId + " not found");
         }
     }
 } 

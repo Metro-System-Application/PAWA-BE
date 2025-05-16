@@ -31,9 +31,8 @@ public class ScheduleController {
 
     @Operation(summary = "Get metro line schedule", description = "Returns schedule details for a specific metro line")
     @GetMapping("/schedules/metro-line/{metroLineId}")
-    @ApiResponse(responseCode = "200", description = "Schedule retrieved successfully")
-    @ApiResponse(responseCode = "404", description = "Metro line not found")
-    @ApiResponse(responseCode = "500", description = "Internal server error or external service unavailable")
+    @ApiResponse(responseCode = "200", description = "Schedule retrieved successfully or error with message")
+    @ApiResponse(responseCode = "500", description = "Internal server error")
     public ResponseEntity<GenericResponseDTO<List<Schedule>>> getScheduleByMetroLine(
             @PathVariable String metroLineId) {
         try {
@@ -45,35 +44,34 @@ public class ScheduleController {
                             "Schedule retrieved successfully",
                             schedules));
         } catch (Exception e) {
-            if (e.getMessage().contains("Metro line not found")) {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                        .body(new GenericResponseDTO<>(
-                                false,
-                                e.getMessage(),
-                                null));
+            // Simplify the error message by taking just the most relevant part
+            String errorMsg = e.getMessage();
+            if (errorMsg.contains(":")) {
+                // Get the last part of the error message after the last colon
+                String[] parts = errorMsg.split(":");
+                errorMsg = parts[parts.length - 1].trim();
             }
+            
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(new GenericResponseDTO<>(
                             false,
-                            "Failed to retrieve schedule: " + e.getMessage(),
+                            errorMsg,
                             null));
         }
     }
 
     @Operation(summary = "Get schedules between stations", description = "Returns possible routes between two stations at a specified time")
     @GetMapping("/schedules/stations")
-    @ApiResponse(responseCode = "200", description = "Schedules retrieved successfully")
-    @ApiResponse(responseCode = "400", description = "Invalid request parameters")
-    @ApiResponse(responseCode = "404", description = "Station not found or no route available")
-    @ApiResponse(responseCode = "500", description = "Internal server error or external service unavailable")
+    @ApiResponse(responseCode = "200", description = "Schedules retrieved successfully or empty with message")
+    @ApiResponse(responseCode = "500", description = "Internal server error")
     public ResponseEntity<GenericResponseDTO<List<Schedule>>> getSchedulesBetweenStations(
             @RequestParam String start,
             @RequestParam String end,
             @RequestParam String dateTime) {
         
         if (start == null || start.isEmpty() || end == null || end.isEmpty() || dateTime == null || dateTime.isEmpty()) {
-            return ResponseEntity.badRequest()
-                    .body(new GenericResponseDTO<>(
+            return ResponseEntity.ok(
+                    new GenericResponseDTO<>(
                             false,
                             "Missing required parameters: start, end, and dateTime are required",
                             null));
@@ -96,18 +94,18 @@ public class ScheduleController {
                             "Schedules retrieved successfully",
                             schedules));
         } catch (Exception e) {
-            if (e.getMessage().contains("Invalid") && e.getMessage().contains("station")) {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                        .body(new GenericResponseDTO<>(
-                                false,
-                                e.getMessage(),
-                                null));
+            // Simplify the error message by taking just the most relevant part
+            String errorMsg = e.getMessage();
+            if (errorMsg.contains(":")) {
+                // Get the last part of the error message after the last colon
+                String[] parts = errorMsg.split(":");
+                errorMsg = parts[parts.length - 1].trim();
             }
             
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(new GenericResponseDTO<>(
                             false,
-                            "Failed to retrieve schedules: " + e.getMessage(),
+                            errorMsg,
                             null));
         }
     }
