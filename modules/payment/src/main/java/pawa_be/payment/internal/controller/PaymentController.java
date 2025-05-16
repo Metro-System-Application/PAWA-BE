@@ -259,10 +259,12 @@ class PaymentController {
     ResponseEntity<GenericResponseDTO<?>> purchaseTicketForPassengerWithId(
             @Parameter(hidden = true) Authentication authentication) {
         String passengerId = getUserIdFromAuthentication(authentication);
+        String email = getEmailFromAuthentication(authentication);
 
         PurchaseWithEwalletResult result =
                 paymentService.payForCheckoutWithEWallet(
-                        passengerId
+                        passengerId,
+                        email
                 );
 
         return handleEwalletPyamentResult(result);

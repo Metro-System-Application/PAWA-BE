@@ -180,7 +180,7 @@ public class PaymentService {
         }
     }
 
-    public PurchaseWithEwalletResult payForCheckoutWithEWallet(String passengerId) {
+    public PurchaseWithEwalletResult payForCheckoutWithEWallet(String passengerId, String email) {
         EwalletModel passengerEwallet = eWalletRepository
                 .findByPassengerModel_PassengerID(passengerId)
                 .orElseThrow(
@@ -210,6 +210,30 @@ public class PaymentService {
 
         // TODO: add tickets to the user + create invoices
         eWalletRepository.save(passengerEwallet);
+
+        List<CartItemForInvoiceDTO> detailedItems = cartContents
+                .getCartContents()
+                .stream()
+                .map(item -> new CartItemForInvoiceDTO(
+                        item.getTicketType().name(),
+                        item.getAmountInVND(),
+                        item.getQuantity(),
+                        item.getLineID(),
+                        item.getLineName(),
+                        item.getStartStation(),
+                        item.getEndStation()
+                        )
+                    ).toList();
+
+        invoiceService.createInvoice(
+                new RequestCreateInvoiceDTO(
+                        passengerId,
+                        email,
+                        detailedItems
+                )
+        );
+
+        externalCartService.cleanCart(passengerId);
 
         return new PurchaseWithEwalletResult(
                 PurchaseWithEWalletResultType.SUCCESS,
