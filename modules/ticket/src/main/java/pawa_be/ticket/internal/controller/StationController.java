@@ -17,7 +17,7 @@ import pawa_be.ticket.internal.dto.StationDto;
 import java.util.List;
 
 @RestController
-@RequestMapping("/ticket")
+@RequestMapping
 @Tag(name = "Station Controller", description = "Operations related to metro stations")
 public class StationController {
 

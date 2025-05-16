@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import pawa_be.ticket.external.model.MetroLine;
 import pawa_be.ticket.external.model.MetroLineResponse;
+import pawa_be.ticket.external.model.MetroStation;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -122,6 +123,58 @@ public class MetroLineService {
         }
     }
 
+    /**
+     * Get a specific station by ID
+     * Note: This is a simplified version of StationService.getStationById to avoid circular dependencies
+     * 
+     * @param stationId The ID of the station to retrieve
+     * @return The station with the specified ID
+     */
+    private MetroStation getStationById(String stationId) {
+        try {
+            String token = authenticate();
+            String url = metroApiBaseUrl + "/api/station/" + stationId;
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.set("Authorization", "Bearer " + token);
+            headers.set("Accept", MediaType.APPLICATION_JSON_VALUE);
+
+            HttpEntity<Void> requestEntity = new HttpEntity<>(headers);
+
+            try {
+                ResponseEntity<String> rawResponse = restTemplate.exchange(
+                        url,
+                        HttpMethod.GET,
+                        requestEntity,
+                        String.class);
+
+                if (rawResponse.getStatusCode() == HttpStatus.OK && rawResponse.getBody() != null) {
+                    ObjectMapper objectMapper = new ObjectMapper();
+                    objectMapper.registerModule(new JavaTimeModule());
+                    objectMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+                    objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+
+                    try {
+                        return objectMapper.readValue(rawResponse.getBody(), MetroStation.class);
+                    } catch (Exception e) {
+                        log.error("Failed to parse station data: {}", e.getMessage());
+                        throw new RuntimeException("Failed to parse station data: " + e.getMessage());
+                    }
+                } else {
+                    log.error("Failed to fetch station. Status code: {}", rawResponse.getStatusCode());
+                    throw new RuntimeException(
+                            "Failed to fetch station. Status code: " + rawResponse.getStatusCode());
+                }
+            } catch (Exception e) {
+                log.error("Error communicating with station API: {}", e.getMessage());
+                throw new RuntimeException("Error communicating with station API: " + e.getMessage());
+            }
+        } catch (Exception e) {
+            log.error("Failed to retrieve station: {}", e.getMessage());
+            throw new RuntimeException("Failed to retrieve station: " + e.getMessage());
+        }
+    }
+
     public MetroLineResponse getMetroLineById(String metroLineId) {
         try {
             String token = authenticate();
@@ -145,37 +198,36 @@ public class MetroLineService {
                     ObjectMapper objectMapper = new ObjectMapper();
                     objectMapper.registerModule(new JavaTimeModule());
                     objectMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
-                    // Configure to ignore unknown properties
                     objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 
                     try {
                         log.info("Raw response body: {}", rawResponse.getBody());
-
-                        // Try a more flexible approach - look at the structure of the JSON
-                        try {
-                            // First try direct mapping
-                            return objectMapper.readValue(
-                                    rawResponse.getBody(),
-                                    MetroLineResponse.class);
-                        } catch (Exception directMappingEx) {
-                            log.warn("Direct MetroLineResponse mapping failed: {}", directMappingEx.getMessage());
-
+                        
+                        // The API returns a MetroLine object directly, not wrapped in a MetroLineResponse
+                        MetroLine metroLine = objectMapper.readValue(
+                                rawResponse.getBody(),
+                                MetroLine.class);
+                        
+                        // Now we need to create the MetroLineResponse and find first and last stations
+                        MetroLineResponse response = new MetroLineResponse();
+                        response.setMetroLine(metroLine);
+                        
+                        // To populate first and last stations, we need to fetch those stations
+                        if (metroLine.getStationOrder() != null && !metroLine.getStationOrder().isEmpty()) {
                             try {
-                                // Try mapping as MetroLine
-                                MetroLine metroLine = objectMapper.readValue(
-                                        rawResponse.getBody(),
-                                        MetroLine.class);
-
-                                // Wrap in MetroLineResponse
-                                MetroLineResponse response = new MetroLineResponse();
-                                response.setMetroLine(metroLine);
-                                return response;
-                            } catch (Exception metroLineEx) {
-                                log.warn("MetroLine mapping also failed: {}", metroLineEx.getMessage());
-                                throw new RuntimeException(
-                                        "Failed to parse metro line data: " + metroLineEx.getMessage());
+                                String firstStationId = metroLine.getStationOrder().get(0);
+                                String lastStationId = metroLine.getStationOrder().get(metroLine.getStationOrder().size() - 1);
+                                
+                                // Use our internal method to fetch station details
+                                response.setFirstStation(getStationById(firstStationId));
+                                response.setLastStation(getStationById(lastStationId));
+                            } catch (Exception stationEx) {
+                                log.warn("Could not fetch station details: {}", stationEx.getMessage());
+                                // We'll continue even if we can't fetch station details
                             }
                         }
+                        
+                        return response;
                     } catch (Exception e) {
                         throw new RuntimeException("Failed to parse metro line data: " + e.getMessage());
                     }
