@@ -15,7 +15,7 @@ import pawa_be.ticket.internal.service.TicketTypeService;
 import java.util.List;
 
 @RestController
-@RequestMapping("/ticket")
+@RequestMapping
 @Tag(name = "Ticket Controller", description = "Operations about tickets")
 class TicketController {
 
@@ -25,18 +25,14 @@ class TicketController {
                 this.ticketTypeService = ticketTypeService;
         }
 
-        @Operation(summary = "Get all ticket types", description = "Returns all active ticket types with optional metro line filtering")
+        @Operation(summary = "Get all ticket types", description = "Returns all active ticket types")
         @GetMapping("/ticket-types")
         @ApiResponse(responseCode = "200", description = "Ticket types retrieved successfully")
         @ApiResponse(responseCode = "401", description = "Unauthorized - user not authenticated")
         @ApiResponse(responseCode = "500", description = "Internal server error")
-        ResponseEntity<GenericResponseDTO<List<TypeDto>>> getTicketTypes(
-                        @RequestParam(required = false) String metroLineId) {
+        ResponseEntity<GenericResponseDTO<List<TypeDto>>> getTicketTypes() {
 
                 List<TypeDto> ticketTypes = ticketTypeService.getAllTicketTypes();
-
-                // Note: metroLine parameter is kept for future implementation
-                // if (metroLineId != null) { ... }
 
                 return ResponseEntity.ok(
                                 new GenericResponseDTO<>(
@@ -51,26 +47,17 @@ class TicketController {
         @ApiResponse(responseCode = "404", description = "No eligible tickets found")
         @ApiResponse(responseCode = "400", description = "Missing required identification parameters")
         ResponseEntity<GenericResponseDTO<TypeDto>> getBestTicketForPassenger(
-                        @RequestParam(required = false) String passengerId,
-                        @RequestParam(required = false) String email) {
+                        @RequestParam(required = true) String email) {
 
-                // Verify at least one identification parameter is provided
-                if ((passengerId == null || passengerId.trim().isEmpty()) &&
-                                (email == null || email.trim().isEmpty())) {
+                if (email == null || email.trim().isEmpty()) {
                         return ResponseEntity.badRequest()
                                         .body(new GenericResponseDTO<>(
                                                         false,
-                                                        "Either passenger ID or email is required",
+                                                        "Email is required",
                                                         null));
                 }
 
-                TypeDto bestTicket = null;
-
-                if (passengerId != null && !passengerId.trim().isEmpty()) {
-                        bestTicket = ticketTypeService.getBestTicketForPassenger(passengerId);
-                } else {
-                        bestTicket = ticketTypeService.getBestTicketForPassengerByEmail(email);
-                }
+                TypeDto bestTicket = ticketTypeService.getBestTicketForPassengerByEmail(email);
 
                 if (bestTicket == null) {
                         return ResponseEntity.status(404)
