@@ -26,7 +26,7 @@ class TicketController {
         }
 
         @Operation(summary = "Get all ticket types", description = "Returns all active ticket types with optional metro line filtering")
-        @GetMapping("/ticket-type")
+        @GetMapping("/ticket-types")
         @ApiResponse(responseCode = "200", description = "Ticket types retrieved successfully")
         @ApiResponse(responseCode = "401", description = "Unauthorized - user not authenticated")
         @ApiResponse(responseCode = "500", description = "Internal server error")
