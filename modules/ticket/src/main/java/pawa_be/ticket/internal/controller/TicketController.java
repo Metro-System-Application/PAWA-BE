@@ -12,6 +12,7 @@ import pawa_be.infrastructure.common.dto.GenericResponseDTO;
 import pawa_be.ticket.internal.dto.TypeDto;
 import pawa_be.ticket.internal.service.TicketTypeService;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @RestController
@@ -41,36 +42,35 @@ class TicketController {
                                                 ticketTypes));
         }
 
-        @Operation(summary = "Get best ticket type for passenger", description = "Returns the most advantageous ticket type for a specific passenger based on eligibility (free tickets prioritized)")
+        @Operation(summary = "Get best ticket types for passenger", description = "Returns the most advantageous ticket types for a specific passenger based on eligibility (free tickets prioritized)")
         @GetMapping("/best-ticket")
-        @ApiResponse(responseCode = "200", description = "Best ticket option retrieved successfully")
-        @ApiResponse(responseCode = "404", description = "No eligible tickets found")
-        @ApiResponse(responseCode = "400", description = "Missing required identification parameters")
-        ResponseEntity<GenericResponseDTO<TypeDto>> getBestTicketForPassenger(
+        @ApiResponse(responseCode = "200", description = "Best ticket options retrieved successfully")
+        ResponseEntity<GenericResponseDTO<List<TypeDto>>> getBestTicketForPassenger(
                         @RequestParam(required = true) String email) {
 
                 if (email == null || email.trim().isEmpty()) {
-                        return ResponseEntity.badRequest()
-                                        .body(new GenericResponseDTO<>(
+                        return ResponseEntity.ok(
+                                        new GenericResponseDTO<>(
                                                         false,
                                                         "Email is required",
-                                                        null));
+                                                        new ArrayList<>()));
                 }
 
-                TypeDto bestTicket = ticketTypeService.getBestTicketForPassengerByEmail(email);
-
-                if (bestTicket == null) {
-                        return ResponseEntity.status(404)
-                                        .body(new GenericResponseDTO<>(
+                List<TypeDto> bestTickets;
+                try {
+                        bestTickets = ticketTypeService.getBestTicketsForPassengerByEmail(email);
+                        
+                        return ResponseEntity.ok(
+                                        new GenericResponseDTO<>(
+                                                        true,
+                                                        "Best ticket options found for passenger",
+                                                        bestTickets));
+                } catch (Exception e) {
+                        return ResponseEntity.ok(
+                                        new GenericResponseDTO<>(
                                                         false,
-                                                        "No eligible tickets found for this passenger",
-                                                        null));
+                                                        "Error retrieving ticket options: " + e.getMessage(),
+                                                        new ArrayList<>()));
                 }
-
-                return ResponseEntity.ok(
-                                new GenericResponseDTO<>(
-                                                true,
-                                                "Best ticket option found for passenger",
-                                                bestTicket));
         }
 }

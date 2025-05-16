@@ -3,7 +3,9 @@ package pawa_be.ticket.internal.service;
 import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.LocalDate;
+import java.time.Period;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
@@ -472,5 +474,77 @@ public class TicketTypeService {
                     return ticket.getExpiryInterval().toHours() / ticket.getPrice().doubleValue();
                 }))
                 .orElse(eligibleTickets.get(0));
+    }
+
+    /**
+     * Get the best ticket types a passenger is eligible for based on their email
+     * 
+     * @param email The email of the passenger to check eligibility for
+     * @return A list of the best ticket types for the passenger based on eligibility
+     */
+    public List<TypeDto> getBestTicketsForPassengerByEmail(String email) {
+        // Find passenger directly by email
+        PassengerModel passenger = passengerRepository.findPassengerModelByEmail(email);
+        
+        if (passenger != null) {
+            // Check if passenger is eligible for FREE ticket
+            boolean isEligibleForFree = Boolean.TRUE.equals(passenger.getIsRevolutionary()) || 
+                                       Boolean.TRUE.equals(passenger.getHasDisability()) ||
+                                       isBelow6orAbove60(passenger.getPassengerDateOfBirth());
+            
+            if (isEligibleForFree) {
+                // Return only FREE ticket
+                List<TypeDto> result = new ArrayList<>();
+                Optional<TicketModel> freeTicket = ticketTypeRepository.findById(TicketType.FREE);
+                if (freeTicket.isPresent()) {
+                    result.add(convertToDto(freeTicket.get()));
+                    return result;
+                }
+            }
+            
+            // Check if passenger is a student
+            boolean isStudent = passenger.getStudentID() != null && !passenger.getStudentID().isEmpty();
+            if (isStudent) {
+                // Return only MONTHLY_STUDENT ticket
+                List<TypeDto> result = new ArrayList<>();
+                Optional<TicketModel> studentTicket = ticketTypeRepository.findById(TicketType.MONTHLY_STUDENT);
+                if (studentTicket.isPresent()) {
+                    result.add(convertToDto(studentTicket.get()));
+                    return result;
+                }
+            }
+        }
+        
+        // For passengers not found or not in special categories, return default tickets
+        return getDefaultTickets();
+    }
+    
+    /**
+     * Returns default tickets for regular passengers
+     */
+    private List<TypeDto> getDefaultTickets() {
+        List<TypeDto> defaultTickets = new ArrayList<>();
+        
+        // Add MONTHLY_ADULT
+        Optional<TicketModel> monthlyAdult = ticketTypeRepository.findById(TicketType.MONTHLY_ADULT);
+        monthlyAdult.ifPresent(ticket -> defaultTickets.add(convertToDto(ticket)));
+        
+        // Add ONE_WAY_4 (will be upgraded later with better one-way logic)
+        Optional<TicketModel> oneWay4 = ticketTypeRepository.findById(TicketType.ONE_WAY_4);
+        oneWay4.ifPresent(ticket -> defaultTickets.add(convertToDto(ticket)));
+        
+        return defaultTickets;
+    }
+    
+    /**
+     * Check if passenger's age is below 6 or above 60
+     */
+    private boolean isBelow6orAbove60(LocalDate dateOfBirth) {
+        if (dateOfBirth == null) {
+            return false;
+        }
+        
+        int age = Period.between(dateOfBirth, LocalDate.now()).getYears();
+        return age < 6 || age >= 60;
     }
 }
