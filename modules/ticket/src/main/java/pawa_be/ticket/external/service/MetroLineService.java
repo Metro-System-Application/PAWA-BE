@@ -1,6 +1,7 @@
 package pawa_be.ticket.external.service;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
@@ -9,6 +10,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
+import pawa_be.ticket.external.model.MetroLine;
 import pawa_be.ticket.external.model.MetroLineResponse;
 
 import java.time.LocalDateTime;
@@ -117,6 +119,75 @@ public class MetroLineService {
             }
         } catch (Exception e) {
             throw new RuntimeException("Failed to retrieve metro lines: " + e.getMessage());
+        }
+    }
+
+    public MetroLineResponse getMetroLineById(String metroLineId) {
+        try {
+            String token = authenticate();
+            String url = metroApiBaseUrl + "/api/metro_line/" + metroLineId;
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.set("Authorization", "Bearer " + token);
+            headers.set("Accept", MediaType.APPLICATION_JSON_VALUE);
+
+            HttpEntity<Void> requestEntity = new HttpEntity<>(headers);
+
+            try {
+                ResponseEntity<String> rawResponse = restTemplate.exchange(
+                        url,
+                        HttpMethod.GET,
+                        requestEntity,
+                        String.class);
+
+                if (rawResponse.getStatusCode() == HttpStatus.OK && rawResponse.getBody() != null) {
+                    // Configure ObjectMapper for proper date/time handling
+                    ObjectMapper objectMapper = new ObjectMapper();
+                    objectMapper.registerModule(new JavaTimeModule());
+                    objectMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+                    // Configure to ignore unknown properties
+                    objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+
+                    try {
+                        log.info("Raw response body: {}", rawResponse.getBody());
+
+                        // Try a more flexible approach - look at the structure of the JSON
+                        try {
+                            // First try direct mapping
+                            return objectMapper.readValue(
+                                    rawResponse.getBody(),
+                                    MetroLineResponse.class);
+                        } catch (Exception directMappingEx) {
+                            log.warn("Direct MetroLineResponse mapping failed: {}", directMappingEx.getMessage());
+
+                            try {
+                                // Try mapping as MetroLine
+                                MetroLine metroLine = objectMapper.readValue(
+                                        rawResponse.getBody(),
+                                        MetroLine.class);
+
+                                // Wrap in MetroLineResponse
+                                MetroLineResponse response = new MetroLineResponse();
+                                response.setMetroLine(metroLine);
+                                return response;
+                            } catch (Exception metroLineEx) {
+                                log.warn("MetroLine mapping also failed: {}", metroLineEx.getMessage());
+                                throw new RuntimeException(
+                                        "Failed to parse metro line data: " + metroLineEx.getMessage());
+                            }
+                        }
+                    } catch (Exception e) {
+                        throw new RuntimeException("Failed to parse metro line data: " + e.getMessage());
+                    }
+                } else {
+                    throw new RuntimeException(
+                            "Failed to fetch metro line. Status code: " + rawResponse.getStatusCode());
+                }
+            } catch (Exception e) {
+                throw new RuntimeException("Error communicating with metro line API: " + e.getMessage());
+            }
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to retrieve metro line: " + e.getMessage());
         }
     }
 }
