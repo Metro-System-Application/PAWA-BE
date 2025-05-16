@@ -7,6 +7,6 @@ import java.util.List;
 
 public interface IStripeService {
     ResponseCreateStripeSessionDTO createTopUpPaymentSession(RequestPaymentDataDTO userData, long price, RequestRedirectUrlsDTO redirectData) throws StripeException;
-    ResponseCreateStripeSessionDTO createDirectTicketPaymentSession(RequestPaymentDataDTO userData, RequestRedirectUrlsDTO redirectData, List<LineItemRequestDTO> items) throws StripeException;
-    ResponseProcessSuccessfulTopUpDTO processSuccessfulTopUp(String payload) throws StripeException;
+    ResponseCreateStripeSessionDTO createDirectTicketPaymentSession(RequestPaymentDataDTO userData, RequestRedirectUrlsDTO redirectData, List<LineItemRequestDTO> items, boolean fromCart) throws StripeException;
+    ResponseProcessSuccessfulTopUpDTO processSuccessfulTransaction(String payload) throws StripeException;
 }

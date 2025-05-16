@@ -7,7 +7,9 @@ import pawa_be.profile.external.dto.ResponsePassengerDTO;
 import pawa_be.profile.internal.model.PassengerModel;
 import pawa_be.profile.internal.repository.PassengerRepository;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.Period;
 
 @Service
 class ExternalPassengerService implements IExternalPassengerService {
@@ -50,5 +52,32 @@ class ExternalPassengerService implements IExternalPassengerService {
     @Override
     public boolean checkIsPassengerProfileIsFilled(String userId) {
         return passengerRepository.findPassengerModelByPassengerID(userId) != null;
+    }
+
+    @Override
+    public boolean isStudent(String userId) {
+        PassengerModel passenger = passengerRepository.findPassengerModelByPassengerID(userId);
+        return passenger != null && passenger.getStudentID() != null && !passenger.getStudentID().isBlank();
+    }
+
+    @Override
+    public boolean isRevolutionary(String userId) {
+        PassengerModel passenger = passengerRepository.findPassengerModelByPassengerID(userId);
+        return passenger != null && Boolean.TRUE.equals(passenger.getIsRevolutionary());
+    }
+
+    @Override
+    public boolean isBelow6orAbove60YearsOld(String userId) {
+        PassengerModel passenger = passengerRepository.findPassengerModelByPassengerID(userId);
+        if (passenger == null || passenger.getPassengerDateOfBirth() == null) return false;
+
+        int age = Period.between(passenger.getPassengerDateOfBirth(), LocalDate.now()).getYears();
+        return age < 6 || age > 60;
+    }
+
+    @Override
+    public boolean hasDisabilities(String userId) {
+        PassengerModel passenger = passengerRepository.findPassengerModelByPassengerID(userId);
+        return passenger != null && Boolean.TRUE.equals(passenger.getHasDisability());
     }
 }

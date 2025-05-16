@@ -7,7 +7,6 @@ import lombok.Getter;
 @AllArgsConstructor
 @Getter
 public class RequestPaymentDataDTO {
-    @NotNull
     private final String userId;
 
     @NotNull

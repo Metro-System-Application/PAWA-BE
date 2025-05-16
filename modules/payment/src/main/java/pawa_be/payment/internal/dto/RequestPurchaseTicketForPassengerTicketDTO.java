@@ -1,6 +1,7 @@
 package pawa_be.payment.internal.dto;
 
 import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -19,4 +20,16 @@ public class RequestPurchaseTicketForPassengerTicketDTO {
 
     @Min(value = 1, message = "Amount must be at least 1")
     private int amount;
+
+    @NotBlank
+    private String lineID;
+
+    // TODO: remove??
+    private String lineName;
+
+    @NotBlank
+    private String startStation;
+
+    @NotBlank
+    private String endStation;
 }

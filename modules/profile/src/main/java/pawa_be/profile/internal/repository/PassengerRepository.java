@@ -7,9 +7,10 @@ import pawa_be.profile.internal.model.PassengerModel;
 import java.util.UUID;
 
 @Repository
-public interface PassengerRepository extends CrudRepository<PassengerModel, UUID> {
+public interface PassengerRepository extends CrudRepository<PassengerModel, String> {
     PassengerModel findPassengerModelByPassengerID(String passengerID);
 
     // Keeping phone lookup for backward compatibility
     PassengerModel findPassengerModelByPassengerPhone(String phone);
+
 }

@@ -1,5 +1,6 @@
 package pawa_be.payment.internal.dto;
 
+import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
@@ -14,9 +15,6 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 public class CartItemForInvoiceDTO {
-    @NotEmpty(message = "Ticket name cannot be empty")
-    private String ticketName;
-
     @NotEmpty(message = "Ticket type cannot be empty")
     private String ticketType;
 
@@ -24,8 +22,12 @@ public class CartItemForInvoiceDTO {
     @Min(value = 0, message = "Price cannot be negative")
     private BigDecimal price;
 
+    @Min(value = 1, message = "At least one item is necessary")
+    @Max(value = 200, message = "At most 200 items of one type can be purchased")
+    private long amount;
+
     @NotNull(message = "Line ID cannot be null")
-    private UUID lineID;
+    private String lineID;
 
     @NotEmpty(message = "Line name cannot be empty")
     private String lineName;
@@ -33,7 +35,4 @@ public class CartItemForInvoiceDTO {
     private String startStation;
 
     private String endStation;
-
-    @Min(value = 1, message = "Duration must be at least 1")
-    private int duration;
 }

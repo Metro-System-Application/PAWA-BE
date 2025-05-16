@@ -10,10 +10,8 @@ import pawa_be.payment.internal.model.InvoiceItemModel;
 import java.util.List;
 
 @Data
-@NoArgsConstructor
 @AllArgsConstructor
 public class RequestCreateInvoiceDTO {
-    @NotNull(message = "Passenger ID cannot be null")
     private String passengerId;
 
     @NotNull(message = "Email cannot be null")

@@ -18,7 +18,7 @@ public class InvoiceItemDTO {
     private BigDecimal price;
     private LocalDateTime activatedAt;
     private LocalDateTime expiredAt;
-    private UUID lineID;
+    private String lineID;
     private String lineName;
     private String startStation;
     private String endStation;

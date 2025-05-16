@@ -41,11 +41,6 @@ public class InvoiceService {
         PassengerModel passengerModel = passengerRepository
                 .findPassengerModelByPassengerID(requestCreateInvoiceDTO.getPassengerId());
 
-        if (passengerModel == null) {
-            throw new NotFoundException(String.format("Passenger with ID '%s' not found",
-                    requestCreateInvoiceDTO.getPassengerId()));
-        }
-
         // Calculate total price from cart items
         BigDecimal totalPrice = requestCreateInvoiceDTO.getCartItems().stream()
                 .map(CartItemForInvoiceDTO::getPrice)
@@ -66,14 +61,13 @@ public class InvoiceService {
                 .map(cartItem -> {
                     InvoiceItemModel item = new InvoiceItemModel();
                     item.setInvoiceModel(savedInvoice);
-                    item.setTicketName(cartItem.getTicketName());
+                    item.setTicketName(cartItem.getTicketType());
                     item.setTicketType(cartItem.getTicketType());
                     item.setPrice(cartItem.getPrice());
                     item.setLineID(cartItem.getLineID());
                     item.setLineName(cartItem.getLineName());
                     item.setStartStation(cartItem.getStartStation());
                     item.setEndStation(cartItem.getEndStation());
-                    item.setDuration(cartItem.getDuration());
                     // activatedAt and expiredAt will be set when the ticket is activated
                     return item;
                 })

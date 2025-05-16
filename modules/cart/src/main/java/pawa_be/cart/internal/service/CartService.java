@@ -2,6 +2,8 @@ package pawa_be.cart.internal.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.tuple.Pair;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import pawa_be.cart.internal.dto.*;
@@ -12,6 +14,7 @@ import pawa_be.cart.internal.repository.CartRepository;
 import pawa_be.infrastructure.common.validation.exceptions.NotFoundException;
 import pawa_be.profile.internal.model.PassengerModel;
 import pawa_be.profile.internal.repository.PassengerRepository;
+import pawa_be.ticket.external.service.IExternalTicketService;
 import pawa_be.ticket.internal.model.TicketModel;
 import pawa_be.ticket.internal.repository.TicketTypeRepository;
 
@@ -32,7 +35,10 @@ public class CartService {
     private final PassengerRepository passengerRepository;
     private final TicketTypeRepository ticketTypeRepository;
 
-    private static final Duration CART_EXPIRY = Duration.ofHours(1); // Items expire after 1 hour
+    @Autowired
+    IExternalTicketService externalTicketService;
+
+    private static final Duration CART_EXPIRY = Duration.ofDays(7); // Items expire after 1 week
 
     @Transactional
     public CartDto getOrCreateCart(String passengerId) {
@@ -45,6 +51,11 @@ public class CartService {
     @Transactional
     public CartDto addToCart(String passengerId, AddToCartRequest request) {
         TicketModel ticketType = findTicketType(request.getTicketType());
+
+        Pair<Boolean, String> eligibility = externalTicketService.checkEligibleTicketType(ticketType.getTicketType(), passengerId);
+        if (!eligibility.getLeft()) {
+            throw new IllegalArgumentException(eligibility.getRight());
+        }
 
         CartModel cart = cartRepository.findByPassengerModel_PassengerID(passengerId)
                 .orElseGet(() -> createNewCart(passengerId));
@@ -139,7 +150,14 @@ public class CartService {
         List<CartItemModel> items = cartItemRepository.findByCart(cart);
 
         LocalDateTime now = LocalDateTime.now();
-        items.removeIf(item -> item.getCreatedAt().plus(CART_EXPIRY).isBefore(now));
+        List<CartItemModel> expiredItems = items.stream()
+                .filter(item -> item.getCreatedAt().plus(CART_EXPIRY).isBefore(now))
+                .toList();
+
+        if (!expiredItems.isEmpty()) {
+            cartItemRepository.deleteAll(expiredItems);
+            items.removeAll(expiredItems);
+        }
 
         List<CartItemDto> itemDtos = items.stream()
                 .map(this::toCartItemDto)
@@ -158,6 +176,7 @@ public class CartService {
                 .totalPrice(totalPrice)
                 .build();
     }
+
 
     private CartItemDto toCartItemDto(CartItemModel item) {
         return CartItemDto.builder()

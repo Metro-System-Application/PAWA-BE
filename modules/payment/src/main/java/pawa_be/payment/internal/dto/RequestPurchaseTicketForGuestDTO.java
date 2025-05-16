@@ -1,9 +1,9 @@
 package pawa_be.payment.internal.dto;
 
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
-import jakarta.validation.constraints.Pattern;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -15,7 +15,11 @@ import java.util.List;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class RequestPurchaseTicketForPassengerDTO {
+public class RequestPurchaseTicketForGuestDTO {
+    @NotBlank
+    @Email(message = "Must be a valid email")
+    private String email;
+
     @NotEmpty(message = "Tickets list must not be empty")
     @Valid
     private List<RequestPurchaseTicketForPassengerTicketDTO> tickets;

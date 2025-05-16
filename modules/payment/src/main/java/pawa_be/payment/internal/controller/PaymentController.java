@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.*;
 import pawa_be.infrastructure.common.dto.GenericResponseDTO;
 import pawa_be.insfrastructure.stripe.dto.ResponseCreateStripeSessionDTO;
 import pawa_be.payment.internal.dto.RequestPayCheckoutWithStripeDTO;
+import pawa_be.payment.internal.dto.RequestPurchaseTicketForGuestDTO;
 import pawa_be.payment.internal.dto.RequestPurchaseTicketForPassengerDTO;
 import pawa_be.payment.internal.dto.RequestTopUpBalanceDTO;
 import pawa_be.payment.internal.service.PaymentService;
@@ -132,6 +133,61 @@ class PaymentController {
     }
 
     @Operation(
+            summary = "Purchase ticket directly for passenger via Stripe",
+            description = "Processes a ticket purchase request for a given passenger ID."
+    )
+    @PostMapping("/direct-ticket")
+    ResponseEntity<GenericResponseDTO<?>> purchaseTicketDirectlyStripe(
+            @Parameter(hidden = true) Authentication authentication,
+            @Valid @RequestBody
+            @Parameter(description = "Details of the ticket(s) to be purchased")
+            RequestPurchaseTicketForPassengerDTO requestPurchaseTicketForPassengerDTO) throws StripeException {
+        String passengerId = getUserIdFromAuthentication(authentication);
+        String passengerEmail = getEmailFromAuthentication(authentication);
+
+        ResponseCreateStripeSessionDTO response = paymentService.createTicketPaymentSession(
+                passengerId,
+                passengerEmail,
+                requestPurchaseTicketForPassengerDTO.getSuccessUrl(),
+                requestPurchaseTicketForPassengerDTO.getCancelUrl(),
+                requestPurchaseTicketForPassengerDTO.getTickets()
+        );
+
+        return ResponseEntity
+                .status(HttpStatus.PERMANENT_REDIRECT)
+                .body(new GenericResponseDTO<>(
+                        true,
+                        "",
+                        response));
+    }
+
+    @Operation(
+            summary = "Purchase ticket directly for guest via Stripe",
+            description = "Processes a ticket purchase request for a given passenger ID."
+    )
+    @PostMapping("/direct-ticket/guest")
+    ResponseEntity<GenericResponseDTO<?>> guestPurchaseTicketDirectlyStripe(
+            @Valid @RequestBody
+            @Parameter(description = "Details of the ticket(s) to be purchased")
+            RequestPurchaseTicketForGuestDTO requestPurchaseTicketForPassengerDTO) throws StripeException {
+
+        ResponseCreateStripeSessionDTO response = paymentService.createTicketPaymentSession(
+                null,
+                requestPurchaseTicketForPassengerDTO.getEmail(),
+                requestPurchaseTicketForPassengerDTO.getSuccessUrl(),
+                requestPurchaseTicketForPassengerDTO.getCancelUrl(),
+                requestPurchaseTicketForPassengerDTO.getTickets()
+        );
+
+        return ResponseEntity
+                .status(HttpStatus.PERMANENT_REDIRECT)
+                .body(new GenericResponseDTO<>(
+                        true,
+                        "",
+                        response));
+    }
+
+    @Operation(
             summary = "Top-up e-wallet balance (for testing only)",
             description = "Increases the e-wallet balance for the currently authenticated passenger by the specified amount."
     )
@@ -230,7 +286,7 @@ class PaymentController {
         String passengerId = getUserIdFromAuthentication(authentication);
         String passengerEmail = getEmailFromAuthentication(authentication);
 
-        ResponseCreateStripeSessionDTO response =  paymentService.createTicketPaymentSession(passengerId, passengerEmail, payCheckoutWithStripeDTO.getSuccessUrl(), payCheckoutWithStripeDTO.getCancelUrl());
+        ResponseCreateStripeSessionDTO response =  paymentService.createTicketPaymentSessionFromCart(passengerId, passengerEmail, payCheckoutWithStripeDTO.getSuccessUrl(), payCheckoutWithStripeDTO.getCancelUrl());
         return ResponseEntity
                 .status(HttpStatus.PERMANENT_REDIRECT)
                 .body(new GenericResponseDTO<>(
@@ -259,10 +315,12 @@ class PaymentController {
     ResponseEntity<GenericResponseDTO<?>> purchaseTicketForPassengerWithId(
             @Parameter(hidden = true) Authentication authentication) {
         String passengerId = getUserIdFromAuthentication(authentication);
+        String email = getEmailFromAuthentication(authentication);
 
         PurchaseWithEwalletResult result =
                 paymentService.payForCheckoutWithEWallet(
-                        passengerId
+                        passengerId,
+                        email
                 );
 
         return handleEwalletPyamentResult(result);
