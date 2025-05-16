@@ -83,4 +83,98 @@ public class ScheduleService {
             throw new RuntimeException("Failed to retrieve schedule: " + e.getMessage());
         }
     }
+
+    public List<Schedule> getScheduleBetweenStations(String startStationId, String endStationId, String dateTime) {
+        try {
+            String token = metroLineService.authenticate();
+            String url = metroApiBaseUrl + "/api/schedule/stations?start=" + startStationId 
+                        + "&end=" + endStationId 
+                        + "&dateTime=" + dateTime;
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.set("Authorization", "Bearer " + token);
+            headers.set("Accept", MediaType.APPLICATION_JSON_VALUE);
+
+            HttpEntity<Void> requestEntity = new HttpEntity<>(headers);
+
+            try {
+                ResponseEntity<String> rawResponse = restTemplate.exchange(
+                        url,
+                        HttpMethod.GET,
+                        requestEntity,
+                        String.class);
+
+                if (rawResponse.getStatusCode() == HttpStatus.OK && rawResponse.getBody() != null) {
+                    ObjectMapper objectMapper = new ObjectMapper();
+                    objectMapper.registerModule(new JavaTimeModule());
+                    objectMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+                    objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+
+                    try {
+                        List<Schedule> schedules = objectMapper.readValue(
+                                rawResponse.getBody(),
+                                new TypeReference<>() {
+                                });
+
+                        if (schedules.isEmpty()) {
+                            getStationExistence(startStationId, "start");
+                            getStationExistence(endStationId, "end");
+
+                            log.info("No routes found between stations: start={}, end={}", startStationId, endStationId);
+                        }
+
+                        return schedules;
+                    } catch (Exception e) {
+                        log.error("Failed to parse station schedule data: {}", e.getMessage());
+                        throw new RuntimeException("Failed to parse station schedule data: " + e.getMessage());
+                    }
+                } else {
+                    log.error("Failed to fetch station schedule. Status code: {}", rawResponse.getStatusCode());
+                    throw new RuntimeException(
+                            "Failed to fetch station schedule. Status code: " + rawResponse.getStatusCode());
+                }
+            } catch (HttpClientErrorException.NotFound e) {
+                log.error("Invalid station IDs: start={}, end={}", startStationId, endStationId);
+                String responseBody = e.getResponseBodyAsString();
+                if (responseBody != null && !responseBody.isEmpty()) {
+                    throw new RuntimeException(responseBody);
+                } else {
+                    throw new RuntimeException("One or both stations not found or no route exists between them");
+                }
+            } catch (Exception e) {
+                log.error("Error communicating with schedule API: {}", e.getMessage());
+                throw new RuntimeException("Error communicating with schedule API: " + e.getMessage());
+            }
+        } catch (Exception e) {
+            log.error("Failed to retrieve station schedule: {}", e.getMessage());
+            throw new RuntimeException("Failed to retrieve station schedule: " + e.getMessage());
+        }
+    }
+
+    private void getStationExistence(String stationId, String position) {
+        try {
+            String token = metroLineService.authenticate();
+            String url = metroApiBaseUrl + "/api/station/" + stationId;
+            
+            HttpHeaders headers = new HttpHeaders();
+            headers.set("Authorization", "Bearer " + token);
+            headers.set("Accept", MediaType.APPLICATION_JSON_VALUE);
+            
+            HttpEntity<Void> requestEntity = new HttpEntity<>(headers);
+            
+            ResponseEntity<String> response = restTemplate.exchange(
+                    url,
+                    HttpMethod.GET,
+                    requestEntity,
+                    String.class);
+                    
+            if (response.getStatusCode() != HttpStatus.OK) {
+                throw new RuntimeException("Invalid " + position + " station ID: " + stationId);
+            }
+        } catch (HttpClientErrorException.NotFound e) {
+            throw new RuntimeException("Invalid " + position + " station ID: " + stationId);
+        } catch (Exception e) {
+            throw new RuntimeException("Error verifying " + position + " station: " + e.getMessage());
+        }
+    }
 } 
