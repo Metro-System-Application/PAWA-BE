@@ -142,13 +142,19 @@ public class StationService {
     }
 
     /**
-     * Convert station model to DTO with only id, name and address
+     * Convert station model to DTO with id, name, address, latitude and longitude
      * 
      * @param station Station model
      * @return Station DTO
      */
     public StationDto convertToDto(MetroStation station) {
-        return new StationDto(station.getId(), station.getName(), station.getAddress());
+        return new StationDto(
+            station.getId(),
+            station.getName(),
+            station.getAddress(),
+            station.getLatitude(),
+            station.getLongitude()
+        );
     }
 
     /**

@@ -13,6 +13,8 @@ public class MetroStation {
     private String id;
     private String name;
     private String address;
+    private Double latitude;
+    private Double longitude;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }

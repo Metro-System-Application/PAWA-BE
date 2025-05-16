@@ -17,4 +17,10 @@ public class StationDto {
 
     @Schema(description = "Station address", example = "Phường Phạm Ngũ Lão, Quận 1, Hồ Chí Minh, Vietnam")
     private String address;
+    
+    @Schema(description = "Station latitude coordinate", example = "10.770814")
+    private Double latitude;
+    
+    @Schema(description = "Station longitude coordinate", example = "106.697489")
+    private Double longitude;
 }
