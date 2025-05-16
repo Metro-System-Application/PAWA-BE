@@ -45,7 +45,7 @@ class CartController {
                 new GenericResponseDTO<>(true, "Cart retrieved successfully", cart));
     }
 
-    @PostMapping("/items")
+    @PostMapping("/item")
     @Operation(summary = "Add item to cart", description = "Adds a new ticket to the passenger's shopping cart")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Item added to cart"),
@@ -75,7 +75,7 @@ class CartController {
                 new GenericResponseDTO<>(true, "Item removed from cart", cart));
     }
 
-    @PutMapping("/items")
+    @PutMapping("/item")
     @Operation(summary = "Edit item in cart", description = "Edits a specific item in the passenger's shopping cart")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Item edited in the cart"),
