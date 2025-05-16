@@ -30,7 +30,7 @@ public class ScheduleController {
     }
 
     @Operation(summary = "Get metro line schedule", description = "Returns schedule details for a specific metro line")
-    @GetMapping("/schedules/metro-line/{metroLineId}")
+    @GetMapping("/schedule/metro-line/{metroLineId}")
     @ApiResponse(responseCode = "200", description = "Schedule retrieved successfully or error with message")
     @ApiResponse(responseCode = "500", description = "Internal server error")
     public ResponseEntity<GenericResponseDTO<List<Schedule>>> getScheduleByMetroLine(
@@ -61,7 +61,7 @@ public class ScheduleController {
     }
 
     @Operation(summary = "Get schedules between stations", description = "Returns possible routes between two stations at a specified time")
-    @GetMapping("/schedules/stations")
+    @GetMapping("/schedule/stations")
     @ApiResponse(responseCode = "200", description = "Schedules retrieved successfully or empty with message")
     @ApiResponse(responseCode = "500", description = "Internal server error")
     public ResponseEntity<GenericResponseDTO<List<Schedule>>> getSchedulesBetweenStations(
