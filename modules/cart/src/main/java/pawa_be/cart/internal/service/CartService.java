@@ -119,7 +119,7 @@ public class CartService {
         return new ResponseEditCartItemDTO(
                 requestEditCartItemDTO.getCartItemId(),
                 requestEditCartItemDTO.getNewAmount(),
-                item.getType().getPrice()
+                item.getType().getPrice().multiply(BigDecimal.valueOf(requestEditCartItemDTO.getNewAmount()))
         );
     }
 
