@@ -81,6 +81,28 @@ public class PaymentService {
 
         eWalletRepository.save(passengerEwallet);
 
+        List<CartItemForInvoiceDTO> detailedItems = tickets
+                .stream()
+                .map(item -> new CartItemForInvoiceDTO(
+                                item.getTicketType().name(),
+                                externalTicketService.getTicketPriceByEnum(item.getTicketType()),
+                                item.getAmount(),
+                                item.getLineID(),
+                                item.getLineName(),
+                                item.getStartStation(),
+                                item.getEndStation()
+                        )
+                ).toList();
+
+        invoiceService.createInvoice(
+                new RequestCreateInvoiceDTO(
+                        passengerId,
+                        // TODO: remove from here
+                        "example@example.com",
+                        detailedItems
+                )
+        );
+
         return new PurchaseWithEwalletResult(
                 PurchaseWithEWalletResultType.SUCCESS,
                 new ResponsePurchaseTicketForPassengerDTO(remainingBalance)
