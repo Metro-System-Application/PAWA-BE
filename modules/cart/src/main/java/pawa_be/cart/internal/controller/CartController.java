@@ -60,7 +60,7 @@ class CartController {
                 new GenericResponseDTO<>(true, "Item added to cart", cart));
     }
 
-    @DeleteMapping("/items/{cartItemId}")
+    @DeleteMapping("/item/{cartItemId}")
     @Operation(summary = "Remove item from cart", description = "Removes a specific item from the passenger's shopping cart")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Item removed from cart"),
