@@ -1,0 +1,15 @@
+package pawa_be.ticket.external.model;
+
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+import java.util.List;
+
+@Data
+@AllArgsConstructor
+@NoArgsConstructor
+public class Schedule {
+    private Integer totalArrivalDuration;
+    private List<ScheduleDetail> schedules;
+} 
