@@ -32,7 +32,7 @@ public class CartService {
     private final PassengerRepository passengerRepository;
     private final TicketTypeRepository ticketTypeRepository;
 
-    private static final Duration CART_EXPIRY = Duration.ofHours(1); // Items expire after 1 hour
+    private static final Duration CART_EXPIRY = Duration.ofDays(7); // Items expire after 1 week
 
     @Transactional
     public CartDto getOrCreateCart(String passengerId) {
@@ -139,7 +139,14 @@ public class CartService {
         List<CartItemModel> items = cartItemRepository.findByCart(cart);
 
         LocalDateTime now = LocalDateTime.now();
-        items.removeIf(item -> item.getCreatedAt().plus(CART_EXPIRY).isBefore(now));
+        List<CartItemModel> expiredItems = items.stream()
+                .filter(item -> item.getCreatedAt().plus(CART_EXPIRY).isBefore(now))
+                .toList();
+
+        if (!expiredItems.isEmpty()) {
+            cartItemRepository.deleteAll(expiredItems);
+            items.removeAll(expiredItems);
+        }
 
         List<CartItemDto> itemDtos = items.stream()
                 .map(this::toCartItemDto)
@@ -158,6 +165,7 @@ public class CartService {
                 .totalPrice(totalPrice)
                 .build();
     }
+
 
     private CartItemDto toCartItemDto(CartItemModel item) {
         return CartItemDto.builder()

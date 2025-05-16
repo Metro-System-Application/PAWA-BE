@@ -24,7 +24,13 @@ public class ExternalCartService implements IExternalCartService {
                 .map(item -> new CartContentDTO(
                         item.getType().getDisplayName(),
                         item.getType().getPrice(),
-                        item.getAmount()
+                        item.getAmount(),
+                        item.getType().getTicketType(),
+                        item.getLineID().toString(),
+                        // TODO: FIX this when line is available
+                        "Sample line",
+                        item.getStartStationID().toString(),
+                        item.getEndStationID().toString()
                 ))
                 .toList();
 

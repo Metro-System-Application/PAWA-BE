@@ -5,16 +5,20 @@ import com.stripe.Stripe;
 import com.stripe.exception.StripeException;
 import com.stripe.model.Event;
 import com.stripe.model.EventDataObjectDeserializer;
+import com.stripe.model.LineItemCollection;
 import com.stripe.model.StripeObject;
 import com.stripe.model.checkout.Session;
 import com.stripe.net.ApiResource;
 import com.stripe.param.checkout.SessionCreateParams;
+import com.stripe.param.checkout.SessionListLineItemsParams;
 import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import pawa_be.insfrastructure.stripe.dto.*;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Service
 public class StripeService implements IStripeService {
@@ -26,22 +30,31 @@ public class StripeService implements IStripeService {
         Stripe.apiKey = secretKey;
     }
 
-    private SessionCreateParams.LineItem buildLineItem(String name, long amountInVND, long quantity) {
+    private SessionCreateParams.LineItem buildLineItem(LineItemRequestDTO item) {
+        Map<String, String> metadata = new HashMap<>();
+        metadata.put("ticket_type", item.getTicketType());
+        metadata.put("line_id", item.getLineId());
+        metadata.put("line_name", item.getLineName());
+        metadata.put("start_station", item.getStartStation());
+        metadata.put("end_station", item.getEndStation());
+
         return SessionCreateParams.LineItem.builder()
-                .setQuantity(quantity)
+                .setQuantity(item.getQuantity())
                 .setPriceData(
                         SessionCreateParams.LineItem.PriceData.builder()
                                 .setCurrency("vnd")
-                                .setUnitAmount(amountInVND)
+                                .setUnitAmount(item.getAmountInVND())
                                 .setProductData(
                                         SessionCreateParams.LineItem.PriceData.ProductData.builder()
-                                                .setName(name)
+                                                .setName(item.getName())
+                                                .putAllMetadata(metadata)
                                                 .build()
                                 )
                                 .build()
                 )
                 .build();
     }
+
 
     public ResponseCreateStripeSessionDTO createTopUpPaymentSession(RequestPaymentDataDTO userData, long price, RequestRedirectUrlsDTO redirectData) throws StripeException {
         SessionCreateParams.Builder sessionBuilder = SessionCreateParams.builder()
@@ -92,16 +105,15 @@ public class StripeService implements IStripeService {
                                 .build()
                 );
 
-        for (LineItemRequestDTO item : items) {
-            SessionCreateParams.LineItem lineItem = buildLineItem(item.getName(), item.getAmountInVND(), item.getQuantity());
-            sessionBuilder.addLineItem(lineItem);
+        for (LineItemRequestDTO item: items) {
+            sessionBuilder.addLineItem(buildLineItem(item));
         }
 
         Session session = Session.create(sessionBuilder.build());
         return new ResponseCreateStripeSessionDTO(session.getUrl());
     }
 
-    public ResponseProcessSuccessfulTopUpDTO processSuccessfulTopUp(String payload) throws StripeException {
+    public ResponseProcessSuccessfulTopUpDTO processSuccessfulTransaction(String payload) throws StripeException {
         Event event;
 
         try {
@@ -111,13 +123,8 @@ public class StripeService implements IStripeService {
         }
 
         EventDataObjectDeserializer dataObjectDeserializer = event.getDataObjectDeserializer();
-        StripeObject stripeObject;
-
-        if (dataObjectDeserializer.getObject().isPresent()) {
-            stripeObject = dataObjectDeserializer.getObject().get();
-        } else {
-            throw new RuntimeException("Unable to deserialize Stripe object from event payload");
-        }
+        StripeObject stripeObject = dataObjectDeserializer.getObject()
+                .orElseThrow(() -> new RuntimeException("Unable to deserialize Stripe object from event payload"));
 
         if (!(stripeObject instanceof Session)) {
             throw new RuntimeException("Expected Session object but received: " + stripeObject.getClass().getSimpleName());
@@ -129,11 +136,15 @@ public class StripeService implements IStripeService {
             throw new IllegalStateException("Payment session not completed");
         }
 
+        SessionListLineItemsParams params = SessionListLineItemsParams.builder().addExpand("data.price.product").build();
+        LineItemCollection lineItems = session.listLineItems(params);
+
+        String paymentIntentId = session.getPaymentIntent();
+
         String userId = session.getClientReferenceId();
         String userEmail = session.getCustomerEmail();
         Long amount = session.getAmountTotal();
 
-        return new ResponseProcessSuccessfulTopUpDTO(userId, userEmail, amount);
+        return new ResponseProcessSuccessfulTopUpDTO(userId, userEmail, amount, paymentIntentId, lineItems);
     }
-
 }

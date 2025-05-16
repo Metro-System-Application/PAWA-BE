@@ -1,6 +1,7 @@
 package pawa_be.payment.internal.model;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotBlank;
 import lombok.*;
 
 import java.math.BigDecimal;
@@ -13,6 +14,9 @@ public class TopUpTransactionModel {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID transactionID;
+
+    @NotBlank
+    private String stripeId;
 
     @Column(nullable = false)
     private BigDecimal amount;

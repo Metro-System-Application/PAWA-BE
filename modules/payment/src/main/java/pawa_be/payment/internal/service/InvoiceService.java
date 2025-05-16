@@ -66,14 +66,13 @@ public class InvoiceService {
                 .map(cartItem -> {
                     InvoiceItemModel item = new InvoiceItemModel();
                     item.setInvoiceModel(savedInvoice);
-                    item.setTicketName(cartItem.getTicketName());
+                    item.setTicketName(cartItem.getTicketType());
                     item.setTicketType(cartItem.getTicketType());
                     item.setPrice(cartItem.getPrice());
-                    item.setLineID(cartItem.getLineID());
+                    item.setLineID(UUID.fromString(cartItem.getLineID()));
                     item.setLineName(cartItem.getLineName());
                     item.setStartStation(cartItem.getStartStation());
                     item.setEndStation(cartItem.getEndStation());
-                    item.setDuration(cartItem.getDuration());
                     // activatedAt and expiredAt will be set when the ticket is activated
                     return item;
                 })
