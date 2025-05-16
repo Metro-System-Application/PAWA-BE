@@ -15,7 +15,7 @@ import pawa_be.ticket.internal.service.TicketTypeService;
 import java.util.List;
 
 @RestController
-@RequestMapping
+@RequestMapping("/ticket")
 @Tag(name = "Ticket Controller", description = "Operations about tickets")
 class TicketController {
 
