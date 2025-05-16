@@ -45,32 +45,18 @@ class TicketController {
         @Operation(summary = "Get best ticket types for passenger", description = "Returns the most advantageous ticket types for a specific passenger based on eligibility (free tickets prioritized)")
         @GetMapping("/best-ticket")
         @ApiResponse(responseCode = "200", description = "Best ticket options retrieved successfully")
-        ResponseEntity<GenericResponseDTO<List<TypeDto>>> getBestTicketForPassenger(
+        ResponseEntity<List<TypeDto>> getBestTicketForPassenger(
                         @RequestParam(required = true) String email) {
 
                 if (email == null || email.trim().isEmpty()) {
-                        return ResponseEntity.ok(
-                                        new GenericResponseDTO<>(
-                                                        false,
-                                                        "Email is required",
-                                                        new ArrayList<>()));
+                        return ResponseEntity.ok(new ArrayList<>());
                 }
 
-                List<TypeDto> bestTickets;
                 try {
-                        bestTickets = ticketTypeService.getBestTicketsForPassengerByEmail(email);
-                        
-                        return ResponseEntity.ok(
-                                        new GenericResponseDTO<>(
-                                                        true,
-                                                        "Best ticket options found for passenger",
-                                                        bestTickets));
+                        List<TypeDto> bestTickets = ticketTypeService.getBestTicketsForPassengerByEmail(email);
+                        return ResponseEntity.ok(bestTickets);
                 } catch (Exception e) {
-                        return ResponseEntity.ok(
-                                        new GenericResponseDTO<>(
-                                                        false,
-                                                        "Error retrieving ticket options: " + e.getMessage(),
-                                                        new ArrayList<>()));
+                        return ResponseEntity.ok(new ArrayList<>());
                 }
         }
 }
