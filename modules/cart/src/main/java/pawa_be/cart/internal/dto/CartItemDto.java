@@ -28,4 +28,6 @@ public class CartItemDto {
     private int amount;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    private String displayName;
+    private String duration;
 }

@@ -192,6 +192,8 @@ public class CartService {
                 .price(item.getType().getPrice())
                 .createdAt(item.getCreatedAt())
                 .updatedAt(item.getUpdatedAt())
+                .displayName(item.getType().getDisplayName())
+                .duration(item.getType().getExpiryDescription())
                 .build();
     }
 }
