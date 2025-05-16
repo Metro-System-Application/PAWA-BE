@@ -41,11 +41,6 @@ public class InvoiceService {
         PassengerModel passengerModel = passengerRepository
                 .findPassengerModelByPassengerID(requestCreateInvoiceDTO.getPassengerId());
 
-        if (passengerModel == null) {
-            throw new NotFoundException(String.format("Passenger with ID '%s' not found",
-                    requestCreateInvoiceDTO.getPassengerId()));
-        }
-
         // Calculate total price from cart items
         BigDecimal totalPrice = requestCreateInvoiceDTO.getCartItems().stream()
                 .map(CartItemForInvoiceDTO::getPrice)
@@ -69,7 +64,7 @@ public class InvoiceService {
                     item.setTicketName(cartItem.getTicketType());
                     item.setTicketType(cartItem.getTicketType());
                     item.setPrice(cartItem.getPrice());
-                    item.setLineID(UUID.fromString(cartItem.getLineID()));
+                    item.setLineID(cartItem.getLineID());
                     item.setLineName(cartItem.getLineName());
                     item.setStartStation(cartItem.getStartStation());
                     item.setEndStation(cartItem.getEndStation());

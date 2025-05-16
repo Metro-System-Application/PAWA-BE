@@ -12,4 +12,5 @@ public class ResponseProcessSuccessfulTopUpDTO {
     Long amount;
     private String transactionId;
     private LineItemCollection lineItems;
+    boolean fromCart;
 }

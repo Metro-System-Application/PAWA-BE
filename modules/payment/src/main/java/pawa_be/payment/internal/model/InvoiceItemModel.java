@@ -33,7 +33,7 @@ public class InvoiceItemModel {
     private LocalDateTime expiredAt;
 
     @Column(nullable = false)
-    private UUID lineID;
+    private String lineID;
 
     @Column(nullable = false)
     private String lineName;

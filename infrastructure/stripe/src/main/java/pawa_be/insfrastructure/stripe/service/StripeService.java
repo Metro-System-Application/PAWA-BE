@@ -91,7 +91,8 @@ public class StripeService implements IStripeService {
     public ResponseCreateStripeSessionDTO createDirectTicketPaymentSession(
             RequestPaymentDataDTO userData,
             RequestRedirectUrlsDTO redirectData,
-            List<LineItemRequestDTO> items
+            List<LineItemRequestDTO> items,
+            boolean fromCart
     ) throws StripeException {
         SessionCreateParams.Builder sessionBuilder = SessionCreateParams.builder()
                 .setMode(SessionCreateParams.Mode.PAYMENT)
@@ -99,6 +100,7 @@ public class StripeService implements IStripeService {
                 .setCancelUrl(redirectData.getCancelUrl())
                 .setClientReferenceId(userData.getUserId())
                 .setCustomerEmail(userData.getUserEmail())
+                .putMetadata("from-cart", String.valueOf(fromCart))
                 .setPaymentIntentData(
                         SessionCreateParams.PaymentIntentData.builder()
                                 .setSetupFutureUsage(SessionCreateParams.PaymentIntentData.SetupFutureUsage.OFF_SESSION)
@@ -131,6 +133,7 @@ public class StripeService implements IStripeService {
         }
 
         Session session = (Session) stripeObject;
+        var metadata = session.getMetadata();
 
         if (!"complete".equals(session.getStatus())) {
             throw new IllegalStateException("Payment session not completed");
@@ -144,7 +147,8 @@ public class StripeService implements IStripeService {
         String userId = session.getClientReferenceId();
         String userEmail = session.getCustomerEmail();
         Long amount = session.getAmountTotal();
+        boolean fromCart = metadata.get("from-cart").equals("true");
 
-        return new ResponseProcessSuccessfulTopUpDTO(userId, userEmail, amount, paymentIntentId, lineItems);
+        return new ResponseProcessSuccessfulTopUpDTO(userId, userEmail, amount, paymentIntentId, lineItems, fromCart);
     }
 }
