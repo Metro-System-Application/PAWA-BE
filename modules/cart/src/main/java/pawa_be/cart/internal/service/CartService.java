@@ -66,12 +66,12 @@ public class CartService {
         CartItemModel cartItem;
         if (optionalCartItem.isPresent()) {
             cartItem = optionalCartItem.get();
-            cartItem.setAmount(cartItem.getAmount() + 1);
+            cartItem.setAmount(cartItem.getAmount() + request.getAmount());
         } else {
             cartItem = new CartItemModel();
             cartItem.setCart(cart);
             cartItem.setLineID(request.getLineId());
-            cartItem.setAmount(1);
+            cartItem.setAmount(request.getAmount());
             cartItem.setStartStationID(request.getStartStationId());
             cartItem.setEndStationID(request.getEndStationId());
             cartItem.setType(ticketType);

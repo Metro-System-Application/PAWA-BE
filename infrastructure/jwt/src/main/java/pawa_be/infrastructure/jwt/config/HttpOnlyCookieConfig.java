@@ -3,7 +3,7 @@ package pawa_be.infrastructure.jwt.config;
 import jakarta.servlet.http.Cookie;
 
 public class HttpOnlyCookieConfig {
-    private final static int COOKIE_AGE = 15 * 60; // 15 minutes
+    private final static int COOKIE_AGE = 60 * 60; // 15 minutes
 
     public static Cookie createCookie(String name, String value) {
         Cookie cookie = new Cookie(name, value);

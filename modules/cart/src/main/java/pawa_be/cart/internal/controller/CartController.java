@@ -83,7 +83,7 @@ class CartController {
     })
     ResponseEntity<GenericResponseDTO<ResponseEditCartItemDTO>> updateItemInCart(
             @Parameter(hidden = true) Authentication authentication,
-            @Valid RequestEditCartItemDTO requestEditCartItemDTO) {
+            @Valid @RequestBody RequestEditCartItemDTO requestEditCartItemDTO) {
         String passengerId = getUserIdFromAuthentication(authentication);
         ResponseEditCartItemDTO response = cartService.editCartItem(passengerId, requestEditCartItemDTO);
         return ResponseEntity.ok(

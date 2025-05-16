@@ -1,6 +1,7 @@
 package pawa_be.cart.internal.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -30,4 +31,9 @@ public class AddToCartRequest {
     @NotNull
     @Schema(description = "The type of ticket", example = "ONE_WAY_4")
     private TicketType ticketType;
+
+    @NotNull
+    @Schema(description = "The amount of tickets", example = "2")
+    @Min(value = 1, message = "Amount must be at least 1")
+    public int amount;
 }
