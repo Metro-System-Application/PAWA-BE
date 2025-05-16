@@ -3,6 +3,7 @@ package pawa_be.payment.internal.service;
 import com.stripe.exception.StripeException;
 import com.stripe.model.LineItem;
 import com.stripe.model.Product;
+import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import pawa_be.cart.external.dto.ResponseGetCartContentsDTO;
@@ -56,6 +57,13 @@ public class PaymentService {
 
         final List<RequestPurchaseTicketForPassengerTicketDTO> tickets =
                 requestPurchaseTicketForPassengerDTO.getTickets();
+
+        for (RequestPurchaseTicketForPassengerTicketDTO ticket : tickets) {
+            Pair<Boolean, String> eligibility = externalTicketService.checkEligibleTicketType(ticket.getTicketType(), passengerId);
+            if (!eligibility.getLeft()) {
+                throw new IllegalArgumentException(eligibility.getRight());
+            }
+        }
 
         BigDecimal totalPrice = tickets.stream()
                 .map(ticket -> {
@@ -155,6 +163,13 @@ public class PaymentService {
     public ResponseCreateStripeSessionDTO createTicketPaymentSession(String userId, String email, String successUrl, String cancelUrl, List<RequestPurchaseTicketForPassengerTicketDTO> tickets) throws StripeException {
         RequestPaymentDataDTO paymentCredentialsDTO = new RequestPaymentDataDTO(userId, email);
         RequestRedirectUrlsDTO redirectData = new RequestRedirectUrlsDTO(successUrl, cancelUrl);
+
+        for (RequestPurchaseTicketForPassengerTicketDTO ticket : tickets) {
+            Pair<Boolean, String> eligibility = externalTicketService.checkEligibleTicketType(ticket.getTicketType(), userId);
+            if (!eligibility.getLeft()) {
+                throw new IllegalArgumentException(eligibility.getRight());
+            }
+        }
 
         return stripeService.createDirectTicketPaymentSession(
                 paymentCredentialsDTO,

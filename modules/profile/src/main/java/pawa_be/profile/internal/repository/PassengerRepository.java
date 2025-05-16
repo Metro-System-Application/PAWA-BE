@@ -12,4 +12,5 @@ public interface PassengerRepository extends CrudRepository<PassengerModel, Stri
 
     // Keeping phone lookup for backward compatibility
     PassengerModel findPassengerModelByPassengerPhone(String phone);
+
 }
