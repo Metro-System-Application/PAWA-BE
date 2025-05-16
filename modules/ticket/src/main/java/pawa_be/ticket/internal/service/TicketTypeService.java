@@ -7,9 +7,15 @@ import java.time.Period;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.Queue;
+import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.LinkedList;
 
 import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,6 +23,9 @@ import org.springframework.stereotype.Service;
 import pawa_be.profile.internal.model.PassengerModel;
 import pawa_be.profile.internal.repository.PassengerRepository;
 import pawa_be.ticket.external.enumerator.TicketType;
+import pawa_be.ticket.external.model.MetroLine;
+import pawa_be.ticket.external.model.MetroLineResponse;
+import pawa_be.ticket.external.service.MetroLineService;
 import pawa_be.ticket.internal.dto.TypeDto;
 import pawa_be.ticket.internal.model.TicketModel;
 import pawa_be.ticket.internal.repository.TicketTypeRepository;
@@ -29,6 +38,9 @@ public class TicketTypeService {
 
     @Autowired
     private PassengerRepository passengerRepository;
+
+    @Autowired
+    private MetroLineService metroLineService;
 
     /**
      * Initializes default ticket types in the database if they don't exist.
@@ -546,5 +558,141 @@ public class TicketTypeService {
         
         int age = Period.between(dateOfBirth, LocalDate.now()).getYears();
         return age < 6 || age >= 60;
+    }
+
+    /**
+     * Calculate the number of stations between start and end stations
+     * Uses BFS to find the shortest path accounting for transfers between lines
+     * @param startStationId The ID of the start station
+     * @param endStationId The ID of the end station
+     * @return The number of stations between start and end (or -1 if no route found)
+     */
+    private int calculateStationsBetween(String startStationId, String endStationId) {
+        // If both stations are the same, return 0 stations between
+        if (startStationId.equals(endStationId)) {
+            return 0;
+        }
+        
+        // Get all metro lines
+        List<MetroLineResponse> allLines = metroLineService.getAllMetroLines();
+        
+        // Create an adjacency map representing the metro network
+        // Maps from station ID to a list of adjacent station IDs
+        Map<String, List<String>> adjacencyMap = new HashMap<>();
+        
+        // Build the adjacency map by parsing all metro lines
+        for (MetroLineResponse lineResponse : allLines) {
+            MetroLine line = lineResponse.getMetroLine();
+            List<String> stationOrder = line.getStationOrder();
+            
+            // For each station in the line, add connections to adjacent stations
+            for (int i = 0; i < stationOrder.size(); i++) {
+                String currentStation = stationOrder.get(i);
+                
+                // Initialize the adjacency list if needed
+                if (!adjacencyMap.containsKey(currentStation)) {
+                    adjacencyMap.put(currentStation, new ArrayList<>());
+                }
+                
+                // Add connection to the previous station (if exists)
+                if (i > 0) {
+                    adjacencyMap.get(currentStation).add(stationOrder.get(i - 1));
+                }
+                
+                // Add connection to the next station (if exists)
+                if (i < stationOrder.size() - 1) {
+                    adjacencyMap.get(currentStation).add(stationOrder.get(i + 1));
+                }
+            }
+        }
+        
+        // Check if both stations exist in the network
+        if (!adjacencyMap.containsKey(startStationId) || !adjacencyMap.containsKey(endStationId)) {
+            return -1; // One or both stations not found
+        }
+        
+        // BFS to find the shortest path
+        Queue<String> queue = new LinkedList<>();
+        Map<String, Integer> distances = new HashMap<>(); // Maps station ID to distance from start
+        Set<String> visited = new HashSet<>();
+        
+        // Initialize BFS
+        queue.add(startStationId);
+        distances.put(startStationId, 0);
+        visited.add(startStationId);
+        
+        // Process the queue
+        while (!queue.isEmpty()) {
+            String currentStation = queue.poll();
+            
+            // If we've reached the end station, return the distance
+            if (currentStation.equals(endStationId)) {
+                return distances.get(currentStation);
+            }
+            
+            // Explore all adjacent stations
+            for (String adjacentStation : adjacencyMap.get(currentStation)) {
+                if (!visited.contains(adjacentStation)) {
+                    queue.add(adjacentStation);
+                    distances.put(adjacentStation, distances.get(currentStation) + 1);
+                    visited.add(adjacentStation);
+                }
+            }
+        }
+        
+        // If we've exhausted all possible paths and haven't found the end station
+        return -1;
+    }
+    
+    /**
+     * Get the best one-way ticket based on the number of stations between start and end
+     * @param startStationId The ID of the start station
+     * @param endStationId The ID of the end station
+     * @return The best one-way ticket type (ONE_WAY_4, ONE_WAY_8, or ONE_WAY_X)
+     */
+    public TypeDto getBestOneWayTicket(String startStationId, String endStationId) {
+        int stationCount = calculateStationsBetween(startStationId, endStationId);
+        
+        // If no route found, default to ONE_WAY_4
+        if (stationCount == -1) {
+            Optional<TicketModel> defaultTicket = ticketTypeRepository.findById(TicketType.ONE_WAY_4);
+            return defaultTicket.map(this::convertToDto).orElse(null);
+        }
+        
+        // Select appropriate ticket type based on station count
+        TicketType ticketType;
+        if (stationCount <= 4) {
+            ticketType = TicketType.ONE_WAY_4;
+        } else if (stationCount <= 8) {
+            ticketType = TicketType.ONE_WAY_8;
+        } else {
+            ticketType = TicketType.ONE_WAY_X;
+        }
+        
+        Optional<TicketModel> ticket = ticketTypeRepository.findById(ticketType);
+        return ticket.map(this::convertToDto).orElse(null);
+    }
+    
+    /**
+     * Get the best tickets for a passenger with optional station information
+     * @param email The email of the passenger
+     * @param startStationId Optional start station ID
+     * @param endStationId Optional end station ID
+     * @return List of best ticket types for the passenger
+     */
+    public List<TypeDto> getBestTicketsForPassengerWithRoute(String email, String startStationId, String endStationId) {
+        // If both start and end stations are provided, prioritize one-way tickets
+        if (startStationId != null && !startStationId.isEmpty() 
+                && endStationId != null && !endStationId.isEmpty()) {
+            List<TypeDto> result = new ArrayList<>();
+            TypeDto bestOneWay = getBestOneWayTicket(startStationId, endStationId);
+            if (bestOneWay != null) {
+                result.add(bestOneWay);
+            }
+            return result;
+        }
+        
+        // Otherwise, get the normal best tickets based on passenger eligibility
+        return getBestTicketsForPassengerByEmail(email);
     }
 }

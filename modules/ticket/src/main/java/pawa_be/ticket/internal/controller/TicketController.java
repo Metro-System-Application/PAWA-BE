@@ -42,18 +42,23 @@ class TicketController {
                                                 ticketTypes));
         }
 
-        @Operation(summary = "Get best ticket types for passenger", description = "Returns the most advantageous ticket types for a specific passenger based on eligibility (free tickets prioritized)")
+        @Operation(summary = "Get best ticket types for passenger", 
+                  description = "Returns the most advantageous ticket types for a specific passenger based on eligibility and route. " +
+                                "When start and end stations are provided, the best one-way ticket is calculated based on the number of stations.")
         @GetMapping("/best-ticket")
         @ApiResponse(responseCode = "200", description = "Best ticket options retrieved successfully")
         ResponseEntity<List<TypeDto>> getBestTicketForPassenger(
-                        @RequestParam(required = true) String email) {
+                        @RequestParam(required = true) String email,
+                        @RequestParam(required = false) String startStationId,
+                        @RequestParam(required = false) String endStationId) {
 
                 if (email == null || email.trim().isEmpty()) {
                         return ResponseEntity.ok(new ArrayList<>());
                 }
 
                 try {
-                        List<TypeDto> bestTickets = ticketTypeService.getBestTicketsForPassengerByEmail(email);
+                        List<TypeDto> bestTickets = ticketTypeService.getBestTicketsForPassengerWithRoute(
+                                email, startStationId, endStationId);
                         return ResponseEntity.ok(bestTickets);
                 } catch (Exception e) {
                         return ResponseEntity.ok(new ArrayList<>());
