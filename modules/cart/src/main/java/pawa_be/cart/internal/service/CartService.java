@@ -14,7 +14,11 @@ import pawa_be.cart.internal.repository.CartRepository;
 import pawa_be.infrastructure.common.validation.exceptions.NotFoundException;
 import pawa_be.profile.internal.model.PassengerModel;
 import pawa_be.profile.internal.repository.PassengerRepository;
+import pawa_be.ticket.external.model.MetroLine;
+import pawa_be.ticket.external.model.MetroLineResponse;
+import pawa_be.ticket.external.model.MetroStation;
 import pawa_be.ticket.external.service.IExternalTicketService;
+import pawa_be.ticket.external.service.MetroLineService;
 import pawa_be.ticket.internal.model.TicketModel;
 import pawa_be.ticket.internal.repository.TicketTypeRepository;
 
@@ -39,6 +43,9 @@ public class CartService {
     IExternalTicketService externalTicketService;
 
     private static final Duration CART_EXPIRY = Duration.ofDays(7); // Items expire after 1 week
+
+    @Autowired
+    private MetroLineService metroLineService;
 
     @Transactional
     public CartDto getOrCreateCart(String passengerId) {
@@ -160,7 +167,13 @@ public class CartService {
         }
 
         List<CartItemDto> itemDtos = items.stream()
-                .map(this::toCartItemDto)
+                .map(item -> {
+                    MetroLineResponse line = metroLineService.getMetroLineById(String.valueOf(item.getLineID()));
+                    MetroStation startStation = metroLineService.getStationById(String.valueOf(item.getStartStationID()));
+                    MetroStation endStation = metroLineService.getStationById(String.valueOf(item.getEndStationID()));
+
+                    return toCartItemDto(item, line.getMetroLine().getName(), startStation.getName(), endStation.getName());
+                })
                 .collect(Collectors.toList());
 
         BigDecimal totalPrice = itemDtos.stream()
@@ -178,15 +191,18 @@ public class CartService {
     }
 
 
-    private CartItemDto toCartItemDto(CartItemModel item) {
+    private CartItemDto toCartItemDto(CartItemModel item, String lineName, String startStationName, String endStationName) {
         return CartItemDto.builder()
                 .cartItemId(item.getCartItemID())
                 .lineId(item.getLineID())
+                .lineName(lineName)
                 .amount(item.getAmount())
                 // Station names would ideally come from an integration with a metro line
                 // service
                 .startStationId(item.getStartStationID())
+                .startStationName(startStationName)
                 .endStationId(item.getEndStationID())
+                .endStationName(endStationName)
                 .ticketType(item.getType().getTicketType())
                 .ticketTypeName(item.getType().getDisplayName())
                 .price(item.getType().getPrice())
