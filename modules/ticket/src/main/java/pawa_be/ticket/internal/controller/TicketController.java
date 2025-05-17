@@ -69,6 +69,15 @@ class TicketController {
                 try {
                         List<TypeDto> bestTickets = ticketTypeService.getBestTicketsForPassengerWithMetroLine(
                                 email, metroLineId);
+                        
+                        if (bestTickets.isEmpty() && metroLineId != null && !metroLineId.isEmpty()) {
+                            return ResponseEntity.ok(
+                                new GenericResponseDTO<>(
+                                        false,
+                                        "Invalid metro line ID: " + metroLineId,
+                                        new ArrayList<>()));
+                        }
+                        
                         return ResponseEntity.ok(
                                 new GenericResponseDTO<>(
                                         true,

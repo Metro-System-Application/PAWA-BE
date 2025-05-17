@@ -4,18 +4,10 @@ import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.Period;
-import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
-import java.util.Queue;
-import java.util.Set;
 import java.util.stream.Collectors;
-import java.util.LinkedList;
 
 import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,7 +15,6 @@ import org.springframework.stereotype.Service;
 import pawa_be.profile.internal.model.PassengerModel;
 import pawa_be.profile.internal.repository.PassengerRepository;
 import pawa_be.ticket.external.enumerator.TicketType;
-import pawa_be.ticket.external.model.MetroLine;
 import pawa_be.ticket.external.model.MetroLineResponse;
 import pawa_be.ticket.external.service.MetroLineService;
 import pawa_be.ticket.internal.dto.TypeDto;
@@ -80,7 +71,7 @@ public class TicketTypeService {
         createTicketType(
                 TicketType.ONE_WAY_X,
                 "One-way ticket (More than 8 stations)",
-                new BigDecimal(8000),
+                new BigDecimal(20000),
                 Duration.ofHours(24),
                 "Valid for more than 8 stations",
                 "Available for everyone");
@@ -131,9 +122,6 @@ public class TicketTypeService {
                 "Available for passengers aged 60 and older, or children under 6. Including people with disabilities or revolutionary contributions");
     }
 
-    /**
-     * Helper method to create a ticket type in the database
-     */
     private TicketModel createTicketType(
             TicketType ticketType,
             String displayName,
@@ -163,106 +151,6 @@ public class TicketTypeService {
                 .collect(Collectors.toList());
     }
 
-    /**
-     * Get a specific ticket type by its code
-     */
-    public TypeDto getTicketTypeByCode(TicketType code) {
-        Optional<TicketModel> ticketType = ticketTypeRepository.findById(code);
-        return ticketType.map(this::convertToDto).orElse(null);
-    }
-
-    /**
-     * Get ticket types that a specific passenger is eligible for
-     * 
-     * @param passengerId The ID of the passenger to check eligibility for
-     * @return List of ticket types the passenger is eligible for
-     */
-    public List<TypeDto> getEligibleTicketTypesForPassenger(String passengerId) {
-        PassengerModel passenger = passengerRepository
-                .findPassengerModelByPassengerID(passengerId);
-
-        if (passenger == null) {
-            return getAllTicketTypes();
-        }
-
-        List<TicketModel> allTicketTypes = ticketTypeRepository.findByActiveTrue();
-
-        // Filter based on eligibility
-        return allTicketTypes.stream()
-                .filter(ticketType -> isPassengerEligibleForTicket(passenger, ticketType))
-                .map(this::convertToDto)
-                .collect(Collectors.toList());
-    }
-
-    /**
-     * Get ticket types that a specific passenger is eligible for using their phone
-     * number
-     * 
-     * @param phone The phone number of the passenger to check eligibility for
-     * @return List of ticket types the passenger is eligible for
-     */
-    public List<TypeDto> getEligibleTicketTypesForPassengerByPhone(String phone) {
-        PassengerModel passenger = passengerRepository.findPassengerModelByPassengerPhone(phone);
-
-        if (passenger == null) {
-            return getAllTicketTypes();
-        }
-
-        // Get all active ticket types
-        List<TicketModel> allTicketTypes = ticketTypeRepository.findByActiveTrue();
-
-        // Filter based on eligibility
-        return allTicketTypes.stream()
-                .filter(ticketType -> isPassengerEligibleForTicket(passenger, ticketType))
-                .map(this::convertToDto)
-                .collect(Collectors.toList());
-    }
-
-    /**
-     * Get ticket types that a specific passenger is eligible for using their email
-     * 
-     * @param email This parameter is kept for backward compatibility but is no
-     *              longer used
-     * @return List of all available ticket types
-     */
-    public List<TypeDto> getEligibleTicketTypesForPassengerByEmail(String email) {
-        // Since email field has been removed, we just return all ticket types
-        return getAllTicketTypes();
-    }
-
-    /**
-     * Check if a passenger is eligible for a specific ticket type
-     */
-    private boolean isPassengerEligibleForTicket(PassengerModel passenger, TicketModel ticketType) {
-        TicketType type = ticketType.getTicketType();
-
-        // MONTHLY_STUDENT requires student ID
-        if (type == TicketType.MONTHLY_STUDENT) {
-            return passenger.getStudentID() != null && !passenger.getStudentID().isEmpty();
-        }
-
-        // FREE ticket is for seniors, children, disabled, or revolutionary contributors
-        if (type == TicketType.FREE) {
-            // Check age for senior citizens (60+)
-            boolean isSenior = ChronoUnit.YEARS.between(passenger.getPassengerDateOfBirth(), LocalDate.now()) >= 60;
-
-            // Check age for children under 6
-            boolean isChild = ChronoUnit.YEARS.between(passenger.getPassengerDateOfBirth(), LocalDate.now()) < 6;
-
-            // Check disability or revolutionary status
-            boolean hasSpecialStatus = Boolean.TRUE.equals(passenger.getHasDisability()) ||
-                    Boolean.TRUE.equals(passenger.getIsRevolutionary());
-
-            return isSenior || isChild || hasSpecialStatus;
-        }
-
-        // All other ticket types are available to everyone
-        return true;
-    }
-
-    /**
-     * Convert ticket type database entity to DTO
-     */
     private TypeDto convertToDto(TicketModel model) {
         TypeDto dto = new TypeDto();
         dto.setTicketType(model.getTicketType());
@@ -275,432 +163,6 @@ public class TicketTypeService {
         return dto;
     }
 
-    /**
-     * Convert hours stored in database to Duration object
-     */
-    public Duration getExpiryIntervalAsDuration(TicketModel model) {
-        return Duration.ofHours(model.getExpiryHours());
-    }
-
-    /**
-     * Get ticket types that can be purchased with the given amount
-     * 
-     * @param price The maximum price the user can spend
-     * @return List of ticket types that cost less than or equal to the given price
-     */
-    public List<TypeDto> getTicketsByPrice(BigDecimal price) {
-        if (price == null) {
-            return getAllTicketTypes();
-        }
-
-        return ticketTypeRepository.findByActiveTrue()
-                .stream()
-                .filter(ticket -> ticket.getPrice().compareTo(price) <= 0)
-                .map(this::convertToDto)
-                .collect(Collectors.toList());
-    }
-
-    /**
-     * Get the best ticket type a passenger is eligible for, prioritizing:
-     * 1. Free tickets
-     * 2. Tickets with longer validity periods
-     * 3. Tickets with lower prices
-     * 
-     * @param passengerId The ID of the passenger to check eligibility for
-     * @return The best ticket type option for the passenger, or null if none found
-     */
-    public TypeDto getBestTicketForPassenger(String passengerId) {
-        List<TypeDto> eligibleTickets = getEligibleTicketTypesForPassenger(passengerId);
-
-        if (eligibleTickets.isEmpty()) {
-            return null;
-        }
-
-        // First check for FREE tickets - highest priority
-        List<TypeDto> freeTickets = eligibleTickets.stream()
-                .filter(ticket -> ticket.getPrice().compareTo(BigDecimal.ZERO) == 0)
-                .collect(Collectors.toList());
-
-        if (!freeTickets.isEmpty()) {
-            // If multiple free tickets, get the one with longest validity
-            return freeTickets.stream()
-                    .max(Comparator.comparing(ticket -> ticket.getExpiryInterval().toHours()))
-                    .orElse(freeTickets.get(0));
-        }
-
-        // Otherwise, prioritize by value (most hours per unit cost)
-        return eligibleTickets.stream()
-                .max(Comparator.comparing(ticket -> {
-                    // Avoid division by zero
-                    if (ticket.getPrice().compareTo(BigDecimal.ZERO) == 0) {
-                        return Double.MAX_VALUE; // Free tickets are highest value
-                    }
-                    // Calculate value ratio: hours per cost unit
-                    return ticket.getExpiryInterval().toHours() / ticket.getPrice().doubleValue();
-                }))
-                .orElse(eligibleTickets.get(0));
-    }
-
-    /**
-     * Get the best ticket type based on specific passenger attributes
-     * rather than requiring a full passenger object.
-     * 
-     * @param isRevolutionary Whether the passenger has revolutionary status
-     * @param hasDisability   Whether the passenger has disability status
-     * @param age             The age of the passenger
-     * @param studentId       The student ID of the passenger (if a student)
-     * @return The best ticket type option based on the attributes, or null if none
-     *         found
-     */
-    public TypeDto getBestTicketByAttributes(
-            Boolean isRevolutionary,
-            Boolean hasDisability,
-            Integer age,
-            String studentId) {
-
-        // Get all active ticket types
-        List<TicketModel> allTicketTypes = ticketTypeRepository.findByActiveTrue();
-
-        // Check for FREE ticket eligibility (seniors, children, disability,
-        // revolutionary)
-        boolean eligibleForFree = Boolean.TRUE.equals(isRevolutionary) ||
-                Boolean.TRUE.equals(hasDisability) ||
-                (age != null && (age >= 60 || age < 6));
-
-        if (eligibleForFree) {
-            // Find FREE ticket
-            Optional<TicketModel> freeTicket = allTicketTypes.stream()
-                    .filter(ticket -> ticket.getTicketType() == TicketType.FREE)
-                    .findFirst();
-
-            if (freeTicket.isPresent()) {
-                return convertToDto(freeTicket.get());
-            }
-        }
-
-        // Check for student ticket eligibility
-        boolean isStudent = studentId != null && !studentId.trim().isEmpty();
-        if (isStudent) {
-            // Find MONTHLY_STUDENT ticket
-            Optional<TicketModel> studentTicket = allTicketTypes.stream()
-                    .filter(ticket -> ticket.getTicketType() == TicketType.MONTHLY_STUDENT)
-                    .findFirst();
-
-            if (studentTicket.isPresent()) {
-                return convertToDto(studentTicket.get());
-            }
-        }
-
-        // If no special ticket is applicable, find the best general ticket based on
-        // value
-        // (which will typically be MONTHLY_ADULT for long-term use)
-        return allTicketTypes.stream()
-                .filter(ticket -> {
-                    TicketType type = ticket.getTicketType();
-                    return type != TicketType.FREE &&
-                            type != TicketType.MONTHLY_STUDENT;
-                })
-                .map(this::convertToDto)
-                .max(Comparator.comparing(ticket -> {
-                    // Calculate value ratio: hours per cost unit
-                    if (ticket.getPrice().compareTo(BigDecimal.ZERO) == 0) {
-                        return Double.MAX_VALUE; // Free tickets are highest value
-                    }
-                    return ticket.getExpiryInterval().toHours() / ticket.getPrice().doubleValue();
-                }))
-                .orElse(null);
-    }
-
-    /**
-     * Get the best ticket type a passenger is eligible for based on their phone
-     * number
-     * 
-     * @param phone The phone number of the passenger to check eligibility for
-     * @return The best ticket type option for the passenger, or null if none found
-     */
-    public TypeDto getBestTicketForPassengerByPhone(String phone) {
-        List<TypeDto> eligibleTickets = getEligibleTicketTypesForPassengerByPhone(phone);
-
-        if (eligibleTickets.isEmpty()) {
-            return null;
-        }
-
-        // First check for FREE tickets - highest priority
-        List<TypeDto> freeTickets = eligibleTickets.stream()
-                .filter(ticket -> ticket.getPrice().compareTo(BigDecimal.ZERO) == 0)
-                .collect(Collectors.toList());
-
-        if (!freeTickets.isEmpty()) {
-            // If multiple free tickets, get the one with longest validity
-            return freeTickets.stream()
-                    .max(Comparator.comparing(ticket -> ticket.getExpiryInterval().toHours()))
-                    .orElse(freeTickets.get(0));
-        }
-
-        // Otherwise, prioritize by value (most hours per unit cost)
-        return eligibleTickets.stream()
-                .max(Comparator.comparing(ticket -> {
-                    // Avoid division by zero
-                    if (ticket.getPrice().compareTo(BigDecimal.ZERO) == 0) {
-                        return Double.MAX_VALUE; // Free tickets are highest value
-                    }
-                    // Calculate value ratio: hours per cost unit
-                    return ticket.getExpiryInterval().toHours() / ticket.getPrice().doubleValue();
-                }))
-                .orElse(eligibleTickets.get(0));
-    }
-
-    /**
-     * Get the best ticket type a passenger is eligible for based on their email
-     * 
-     * @param email The email of the passenger to check eligibility for
-     * @return The best ticket type option for the passenger, or null if none found
-     */
-    public TypeDto getBestTicketForPassengerByEmail(String email) {
-        List<TypeDto> eligibleTickets = getEligibleTicketTypesForPassengerByEmail(email);
-
-        if (eligibleTickets.isEmpty()) {
-            return null;
-        }
-
-        // First check for FREE tickets - highest priority
-        List<TypeDto> freeTickets = eligibleTickets.stream()
-                .filter(ticket -> ticket.getPrice().compareTo(BigDecimal.ZERO) == 0)
-                .collect(Collectors.toList());
-
-        if (!freeTickets.isEmpty()) {
-            // If multiple free tickets, get the one with longest validity
-            return freeTickets.stream()
-                    .max(Comparator.comparing(ticket -> ticket.getExpiryInterval().toHours()))
-                    .orElse(freeTickets.get(0));
-        }
-
-        // Otherwise, prioritize by value (most hours per unit cost)
-        return eligibleTickets.stream()
-                .max(Comparator.comparing(ticket -> {
-                    // Avoid division by zero
-                    if (ticket.getPrice().compareTo(BigDecimal.ZERO) == 0) {
-                        return Double.MAX_VALUE; // Free tickets are highest value
-                    }
-                    // Calculate value ratio: hours per cost unit
-                    return ticket.getExpiryInterval().toHours() / ticket.getPrice().doubleValue();
-                }))
-                .orElse(eligibleTickets.get(0));
-    }
-
-    /**
-     * Get the best ticket types a passenger is eligible for based on their email
-     * 
-     * @param email The email of the passenger to check eligibility for
-     * @return A list of the best ticket types for the passenger based on eligibility
-     */
-    public List<TypeDto> getBestTicketsForPassengerByEmail(String email) {
-        // Find passenger directly by email
-        PassengerModel passenger = passengerRepository.findPassengerModelByEmail(email);
-        
-        if (passenger != null) {
-            // Check if passenger is eligible for FREE ticket
-            boolean isEligibleForFree = Boolean.TRUE.equals(passenger.getIsRevolutionary()) || 
-                                       Boolean.TRUE.equals(passenger.getHasDisability()) ||
-                                       isBelow6orAbove60(passenger.getPassengerDateOfBirth());
-            
-            if (isEligibleForFree) {
-                // Return only FREE ticket
-                List<TypeDto> result = new ArrayList<>();
-                Optional<TicketModel> freeTicket = ticketTypeRepository.findById(TicketType.FREE);
-                if (freeTicket.isPresent()) {
-                    result.add(convertToDto(freeTicket.get()));
-                    return result;
-                }
-            }
-            
-            // Check if passenger is a student
-            boolean isStudent = passenger.getStudentID() != null && !passenger.getStudentID().isEmpty();
-            if (isStudent) {
-                // Return only MONTHLY_STUDENT ticket
-                List<TypeDto> result = new ArrayList<>();
-                Optional<TicketModel> studentTicket = ticketTypeRepository.findById(TicketType.MONTHLY_STUDENT);
-                if (studentTicket.isPresent()) {
-                    result.add(convertToDto(studentTicket.get()));
-                    return result;
-                }
-            }
-        }
-        
-        // For passengers not found or not in special categories, return default tickets
-        return getDefaultTickets();
-    }
-    
-    /**
-     * Returns default tickets for regular passengers
-     */
-    private List<TypeDto> getDefaultTickets() {
-        List<TypeDto> defaultTickets = new ArrayList<>();
-        
-        // Add MONTHLY_ADULT
-        Optional<TicketModel> monthlyAdult = ticketTypeRepository.findById(TicketType.MONTHLY_ADULT);
-        monthlyAdult.ifPresent(ticket -> defaultTickets.add(convertToDto(ticket)));
-        
-        // Add ONE_WAY_4 (will be upgraded later with better one-way logic)
-        Optional<TicketModel> oneWay4 = ticketTypeRepository.findById(TicketType.ONE_WAY_4);
-        oneWay4.ifPresent(ticket -> defaultTickets.add(convertToDto(ticket)));
-        
-        return defaultTickets;
-    }
-    
-    /**
-     * Check if passenger's age is below 6 or above 60
-     */
-    private boolean isBelow6orAbove60(LocalDate dateOfBirth) {
-        if (dateOfBirth == null) {
-            return false;
-        }
-        
-        int age = Period.between(dateOfBirth, LocalDate.now()).getYears();
-        return age < 6 || age >= 60;
-    }
-
-    /**
-     * Calculate the number of stations between start and end stations
-     * Uses BFS to find the shortest path accounting for transfers between lines
-     * @param startStationId The ID of the start station
-     * @param endStationId The ID of the end station
-     * @return The number of stations between start and end (or -1 if no route found)
-     */
-    private int calculateStationsBetween(String startStationId, String endStationId) {
-        // If both stations are the same, return 0 stations between
-        if (startStationId.equals(endStationId)) {
-            return 0;
-        }
-        
-        // Get all metro lines
-        List<MetroLineResponse> allLines = metroLineService.getAllMetroLines();
-        
-        // Create an adjacency map representing the metro network
-        // Maps from station ID to a list of adjacent station IDs
-        Map<String, List<String>> adjacencyMap = new HashMap<>();
-        
-        // Build the adjacency map by parsing all metro lines
-        for (MetroLineResponse lineResponse : allLines) {
-            MetroLine line = lineResponse.getMetroLine();
-            List<String> stationOrder = line.getStationOrder();
-            
-            // For each station in the line, add connections to adjacent stations
-            for (int i = 0; i < stationOrder.size(); i++) {
-                String currentStation = stationOrder.get(i);
-                
-                // Initialize the adjacency list if needed
-                if (!adjacencyMap.containsKey(currentStation)) {
-                    adjacencyMap.put(currentStation, new ArrayList<>());
-                }
-                
-                // Add connection to the previous station (if exists)
-                if (i > 0) {
-                    adjacencyMap.get(currentStation).add(stationOrder.get(i - 1));
-                }
-                
-                // Add connection to the next station (if exists)
-                if (i < stationOrder.size() - 1) {
-                    adjacencyMap.get(currentStation).add(stationOrder.get(i + 1));
-                }
-            }
-        }
-        
-        // Check if both stations exist in the network
-        if (!adjacencyMap.containsKey(startStationId) || !adjacencyMap.containsKey(endStationId)) {
-            return -1; // One or both stations not found
-        }
-        
-        // BFS to find the shortest path
-        Queue<String> queue = new LinkedList<>();
-        Map<String, Integer> distances = new HashMap<>(); // Maps station ID to distance from start
-        Set<String> visited = new HashSet<>();
-        
-        // Initialize BFS
-        queue.add(startStationId);
-        distances.put(startStationId, 0);
-        visited.add(startStationId);
-        
-        // Process the queue
-        while (!queue.isEmpty()) {
-            String currentStation = queue.poll();
-            
-            // If we've reached the end station, return the distance
-            if (currentStation.equals(endStationId)) {
-                return distances.get(currentStation);
-            }
-            
-            // Explore all adjacent stations
-            for (String adjacentStation : adjacencyMap.get(currentStation)) {
-                if (!visited.contains(adjacentStation)) {
-                    queue.add(adjacentStation);
-                    distances.put(adjacentStation, distances.get(currentStation) + 1);
-                    visited.add(adjacentStation);
-                }
-            }
-        }
-        
-        // If we've exhausted all possible paths and haven't found the end station
-        return -1;
-    }
-    
-    /**
-     * Get the best one-way ticket based on the number of stations between start and end
-     * @param startStationId The ID of the start station
-     * @param endStationId The ID of the end station
-     * @return The best one-way ticket type (ONE_WAY_4, ONE_WAY_8, or ONE_WAY_X)
-     */
-    public TypeDto getBestOneWayTicket(String startStationId, String endStationId) {
-        int stationCount = calculateStationsBetween(startStationId, endStationId);
-        
-        // If no route found, default to ONE_WAY_4
-        if (stationCount == -1) {
-            Optional<TicketModel> defaultTicket = ticketTypeRepository.findById(TicketType.ONE_WAY_4);
-            return defaultTicket.map(this::convertToDto).orElse(null);
-        }
-        
-        // Select appropriate ticket type based on station count
-        TicketType ticketType;
-        if (stationCount <= 4) {
-            ticketType = TicketType.ONE_WAY_4;
-        } else if (stationCount <= 8) {
-            ticketType = TicketType.ONE_WAY_8;
-        } else {
-            ticketType = TicketType.ONE_WAY_X;
-        }
-        
-        Optional<TicketModel> ticket = ticketTypeRepository.findById(ticketType);
-        return ticket.map(this::convertToDto).orElse(null);
-    }
-    
-    /**
-     * Get the best tickets for a passenger with optional station information
-     * @param email The email of the passenger
-     * @param startStationId Optional start station ID
-     * @param endStationId Optional end station ID
-     * @return List of best ticket types for the passenger
-     */
-    public List<TypeDto> getBestTicketsForPassengerWithRoute(String email, String startStationId, String endStationId) {
-        // If both start and end stations are provided, prioritize one-way tickets
-        if (startStationId != null && !startStationId.isEmpty() 
-                && endStationId != null && !endStationId.isEmpty()) {
-            List<TypeDto> result = new ArrayList<>();
-            TypeDto bestOneWay = getBestOneWayTicket(startStationId, endStationId);
-            if (bestOneWay != null) {
-                result.add(bestOneWay);
-            }
-            return result;
-        }
-        
-        // Otherwise, get the normal best tickets based on passenger eligibility
-        return getBestTicketsForPassengerByEmail(email);
-    }
-
-    /**
-     * Get the best one-way ticket based on the number of stations in a metro line
-     * @param metroLineId The ID of the metro line
-     * @return The best one-way ticket type (ONE_WAY_4, ONE_WAY_8, or ONE_WAY_X)
-     */
     public TypeDto getBestTicketByMetroLine(String metroLineId) {
         try {
             // Get metro line information
@@ -724,23 +186,14 @@ public class TicketTypeService {
                 Optional<TicketModel> ticket = ticketTypeRepository.findById(ticketType);
                 return ticket.map(this::convertToDto).orElse(null);
             }
+            // Metro line not found or invalid
+            return null;
         } catch (Exception e) {
-            // If there's an error fetching metro line information, default to ONE_WAY_4
-            Optional<TicketModel> defaultTicket = ticketTypeRepository.findById(TicketType.ONE_WAY_4);
-            return defaultTicket.map(this::convertToDto).orElse(null);
+            // If there's an error fetching metro line information, return null
+            return null;
         }
-        
-        // Default to ONE_WAY_4 if metro line not found
-        Optional<TicketModel> defaultTicket = ticketTypeRepository.findById(TicketType.ONE_WAY_4);
-        return defaultTicket.map(this::convertToDto).orElse(null);
     }
-    
-    /**
-     * Get the best tickets for a passenger with optional metro line
-     * @param email The email of the passenger
-     * @param metroLineId Optional metro line ID
-     * @return List of best ticket types for the passenger
-     */
+
     public List<TypeDto> getBestTicketsForPassengerWithMetroLine(String email, String metroLineId) {
         // Find passenger directly by email
         PassengerModel passenger = passengerRepository.findPassengerModelByEmail(email);
@@ -787,5 +240,28 @@ public class TicketTypeService {
         
         // For passengers not found or not in special categories, return default tickets
         return getDefaultTickets();
+    }
+
+    private List<TypeDto> getDefaultTickets() {
+        List<TypeDto> defaultTickets = new ArrayList<>();
+        
+        // Add MONTHLY_ADULT
+        Optional<TicketModel> monthlyAdult = ticketTypeRepository.findById(TicketType.MONTHLY_ADULT);
+        monthlyAdult.ifPresent(ticket -> defaultTickets.add(convertToDto(ticket)));
+        
+        // Add ONE_WAY_4 (will be upgraded later with better one-way logic)
+        Optional<TicketModel> oneWay4 = ticketTypeRepository.findById(TicketType.ONE_WAY_4);
+        oneWay4.ifPresent(ticket -> defaultTickets.add(convertToDto(ticket)));
+        
+        return defaultTickets;
+    }
+
+    private boolean isBelow6orAbove60(LocalDate dateOfBirth) {
+        if (dateOfBirth == null) {
+            return false;
+        }
+        
+        int age = Period.between(dateOfBirth, LocalDate.now()).getYears();
+        return age < 6 || age >= 60;
     }
 }
