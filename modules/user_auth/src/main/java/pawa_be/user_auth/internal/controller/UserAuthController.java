@@ -31,6 +31,7 @@ import pawa_be.user_auth.internal.service.IUserAuthService;
 import java.io.IOException;
 
 import static pawa_be.infrastructure.jwt.misc.Miscellaneous.buildCookieWithCredentials;
+import static pawa_be.infrastructure.jwt.misc.Miscellaneous.buildTempGoogleCookieWithCredentials;
 
 @Validated
 @RestController
@@ -325,8 +326,8 @@ class UserAuthController {
         ResponseGoogleAuthResultDTO result = userAuthService.authenticateAndHandleGoogleUser(code);
 
         if (!result.isProfileComplete()) {
-            Cookie tempCookie = HttpOnlyCookieConfig.createCookie("TEMP_GOOGLE_AUTH", result.getTempToken());
-            response.addCookie(tempCookie);
+            String authCookieHeader = buildTempGoogleCookieWithCredentials(result.getTempToken());
+            response.setHeader("Set-Cookie", authCookieHeader);
 
             return ResponseEntity
                     .status(HttpStatus.PARTIAL_CONTENT)
@@ -334,7 +335,6 @@ class UserAuthController {
         }
 
         String authCookieHeader = buildCookieWithCredentials(result.getAuthToken());
-
         response.setHeader("Set-Cookie", authCookieHeader);
 
         return ResponseEntity
@@ -366,12 +366,28 @@ class UserAuthController {
             )
     })
     ResponseEntity<GenericResponseDTO<?>> fillGoogleProfileData(
+            HttpServletRequest request,
+            HttpServletResponse response,
             @Valid @RequestBody RequestRegisterPassengerDTO profileData,
             @CookieValue(name = "TEMP_GOOGLE_AUTH") String tempToken) {
-        ResponsePassengerDTO responsePassengerDTO = userAuthService.registerProfileFromGoogle(tempToken, profileData);
+        ResponseGoogleAuthResultDTO result = userAuthService.registerProfileFromGoogle(tempToken, profileData);
+
+        String authCookieHeader = buildCookieWithCredentials(result.getAuthToken());
+        response.setHeader("Set-Cookie", authCookieHeader);
+
+        Cookie removedTempGoogleCookie = HttpOnlyCookieConfig.createCookie(
+                "TEMP_AUTH_COOKIE",
+                ""
+        );
+        removedTempGoogleCookie.setMaxAge(0);
+        removedTempGoogleCookie.setPath("/");
+        removedTempGoogleCookie.setAttribute("SameSite", "None");
+
+        response.addCookie(removedTempGoogleCookie);
+
         return ResponseEntity
                 .status(HttpStatus.OK)
-                .body(new GenericResponseDTO<>(true, "Profile data is updated", responsePassengerDTO));
+                .body(new GenericResponseDTO<>(true, "Profile data is updated", null));
     }
 }
 

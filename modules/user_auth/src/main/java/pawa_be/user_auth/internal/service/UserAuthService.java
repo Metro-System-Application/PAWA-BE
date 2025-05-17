@@ -1,31 +1,23 @@
 package pawa_be.user_auth.internal.service;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UserDetailsService;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Component;
 
-import pawa_be.infrastructure.common.dto.GenericResponseDTO;
 import pawa_be.infrastructure.common.validation.exceptions.*;
 import pawa_be.infrastructure.google_oauth.service.IGoogleOAuthService;
 import pawa_be.infrastructure.jwt.JwtUtil;
-import pawa_be.infrastructure.jwt.config.UserAuthConfig;
 import pawa_be.infrastructure.jwt.config.UserRoleConfig;
 import pawa_be.infrastructure.jwt.user_details.CustomUserDetails;
 import pawa_be.payment.external.service.IExternalPaymentService;
@@ -34,8 +26,6 @@ import pawa_be.profile.external.dto.ResponsePassengerDTO;
 import pawa_be.profile.external.service.IExternalPassengerService;
 import pawa_be.profile.internal.model.PassengerModel;
 import pawa_be.user_auth.internal.dto.*;
-import pawa_be.user_auth.internal.enumeration.UpdateUserAuthDataResult;
-import pawa_be.user_auth.internal.enumeration.UpdateUserResult;
 import pawa_be.user_auth.internal.model.UserAuthModel;
 import pawa_be.user_auth.internal.repository.UserAuthRepository;
 
@@ -147,14 +137,19 @@ public class UserAuthService implements IUserAuthService {
         );
     }
 
-    public ResponsePassengerDTO registerProfileFromGoogle(String tempToken, RequestRegisterPassengerDTO profileData) {
+    public ResponseGoogleAuthResultDTO registerProfileFromGoogle(String tempToken, RequestRegisterPassengerDTO profileData) {
         String googleId = jwtUtil.validateAndExtractGoogleIdFromTempToken(tempToken);
 
         UserAuthModel registration = findByGoogleId(googleId).orElseThrow(
                 () -> new NotFoundException("User with this googleId is not found")
         );
 
-        return createProfileAndEWallet(registration.getUserId(), profileData);
+        ResponsePassengerDTO dto = createProfileAndEWallet(registration.getUserId(), profileData);
+
+        CustomUserDetails userDetails = (CustomUserDetails) loadUserByGoogleId(googleId);
+        String authToken = createAuthToken(userDetails, true);
+
+        return new ResponseGoogleAuthResultDTO(true, authToken, null, null);
     }
 
     public ResponseRegisterUserDTO registerUser(RequestRegisterUserDTO user) {
