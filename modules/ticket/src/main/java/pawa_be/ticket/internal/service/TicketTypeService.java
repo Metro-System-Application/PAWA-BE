@@ -142,13 +142,117 @@ public class TicketTypeService {
     }
 
     /**
-     * Get all active ticket types
+     * Get all active general ticket types, with ONE_WAY type filtered based on metro line
+     * 
+     * @param metroLineId The ID of the metro line to determine appropriate ONE_WAY ticket
+     * @return List of general ticket types including filtered ONE_WAY ticket
      */
-    public List<TypeDto> getAllTicketTypes() {
-        return ticketTypeRepository.findByActiveTrue()
+    public List<TypeDto> getAllTicketTypes(String metroLineId) {
+        List<TypeDto> allTickets = ticketTypeRepository.findByActiveTrue()
                 .stream()
                 .map(this::convertToDto)
                 .collect(Collectors.toList());
+        
+        // If no metro line provided, return all tickets
+        if (metroLineId == null || metroLineId.trim().isEmpty()) {
+            return allTickets;
+        }
+        
+        // Filter out all ONE_WAY tickets
+        List<TypeDto> filteredTickets = allTickets.stream()
+                .filter(ticket -> {
+                    TicketType ticketType = ticket.getTicketType();
+                    return ticketType != TicketType.ONE_WAY_4 && 
+                           ticketType != TicketType.ONE_WAY_8 && 
+                           ticketType != TicketType.ONE_WAY_X &&
+                           ticketType != TicketType.FREE && 
+                           ticketType != TicketType.MONTHLY_STUDENT;
+                })
+                .collect(Collectors.toList());
+        
+        // Get the appropriate ONE_WAY ticket for this metro line - it will never be null now
+        TypeDto bestOneWay = getBestTicketByMetroLine(metroLineId);
+        
+        // Create a new list with ONE_WAY ticket at the top
+        List<TypeDto> result = new ArrayList<>();
+        result.add(bestOneWay); // Add ONE_WAY ticket first
+        result.addAll(filteredTickets); // Add all other tickets
+        
+        return result;
+    }
+    
+    /**
+     * Get all guest ticket types (ONE_WAY based on metro line, DAILY, THREE_DAY, MONTHLY_ADULT)
+     * 
+     * @param metroLineId The ID of the metro line to determine appropriate ONE_WAY ticket
+     * @return List of guest-appropriate ticket types
+     */
+    public List<TypeDto> getGuestTicketTypes(String metroLineId) {
+        // Get all tickets
+        List<TypeDto> allTickets = ticketTypeRepository.findByActiveTrue()
+                .stream()
+                .map(this::convertToDto)
+                .collect(Collectors.toList());
+        
+        // Keep only ticket types that should be available to guests
+        List<TypeDto> guestTickets = allTickets.stream()
+                .filter(ticket -> {
+                    TicketType ticketType = ticket.getTicketType();
+                    return ticketType == TicketType.DAILY || 
+                           ticketType == TicketType.THREE_DAY || 
+                           ticketType == TicketType.MONTHLY_ADULT;
+                })
+                .collect(Collectors.toList());
+        
+        // Add the appropriate ONE_WAY ticket based on metro line at the top
+        if (metroLineId != null && !metroLineId.trim().isEmpty()) {
+            TypeDto bestOneWay = getBestTicketByMetroLine(metroLineId);
+            
+            // Create a new list with ONE_WAY ticket at the top
+            List<TypeDto> result = new ArrayList<>();
+            result.add(bestOneWay); // Add ONE_WAY ticket first
+            result.addAll(guestTickets); // Add all other tickets
+            return result;
+        }
+        
+        return guestTickets;
+    }
+    
+    /**
+     * Get student ticket types (same as guest tickets but with MONTHLY_STUDENT instead of MONTHLY_ADULT)
+     * 
+     * @param metroLineId The ID of the metro line to determine appropriate ONE_WAY ticket
+     * @return List of student-appropriate ticket types
+     */
+    public List<TypeDto> getStudentTicketTypes(String metroLineId) {
+        // Get all tickets
+        List<TypeDto> allTickets = ticketTypeRepository.findByActiveTrue()
+                .stream()
+                .map(this::convertToDto)
+                .collect(Collectors.toList());
+        
+        // Keep only ticket types that should be available to students
+        List<TypeDto> studentTickets = allTickets.stream()
+                .filter(ticket -> {
+                    TicketType ticketType = ticket.getTicketType();
+                    return ticketType == TicketType.DAILY || 
+                           ticketType == TicketType.THREE_DAY || 
+                           ticketType == TicketType.MONTHLY_STUDENT;
+                })
+                .collect(Collectors.toList());
+        
+        // Add the appropriate ONE_WAY ticket based on metro line at the top
+        if (metroLineId != null && !metroLineId.trim().isEmpty()) {
+            TypeDto bestOneWay = getBestTicketByMetroLine(metroLineId);
+            
+            // Create a new list with ONE_WAY ticket at the top
+            List<TypeDto> result = new ArrayList<>();
+            result.add(bestOneWay); // Add ONE_WAY ticket first
+            result.addAll(studentTickets); // Add all other tickets
+            return result;
+        }
+        
+        return studentTickets;
     }
 
     private TypeDto convertToDto(TicketModel model) {
@@ -184,22 +288,41 @@ public class TicketTypeService {
                 }
                 
                 Optional<TicketModel> ticket = ticketTypeRepository.findById(ticketType);
-                return ticket.map(this::convertToDto).orElse(null);
+                if (ticket.isPresent()) {
+                    return convertToDto(ticket.get());
+                }
             }
-            // Metro line not found or invalid
-            return null;
+            
+            // Default to ONE_WAY_4 if metro line not found, invalid, or ticket not found
+            Optional<TicketModel> defaultTicket = ticketTypeRepository.findById(TicketType.ONE_WAY_4);
+            return defaultTicket.map(this::convertToDto).orElseThrow(() -> 
+                new RuntimeException("ONE_WAY_4 ticket type not found in database"));
+            
         } catch (Exception e) {
-            // If there's an error fetching metro line information, return null
-            return null;
+            // If there's any error, default to ONE_WAY_4
+            Optional<TicketModel> defaultTicket = ticketTypeRepository.findById(TicketType.ONE_WAY_4);
+            return defaultTicket.map(this::convertToDto).orElseThrow(() -> 
+                new RuntimeException("ONE_WAY_4 ticket type not found in database"));
         }
     }
 
+    /**
+     * Get the best tickets for a passenger with metro line
+     * @param email The email of the passenger
+     * @param metroLineId The metro line ID (required)
+     * @return List of best ticket types for the passenger
+     */
     public List<TypeDto> getBestTicketsForPassengerWithMetroLine(String email, String metroLineId) {
+        // Validate input
+        if (metroLineId == null || metroLineId.isEmpty()) {
+            return new ArrayList<>(); // Return empty list if metro line ID is not provided
+        }
+        
         // Find passenger directly by email
         PassengerModel passenger = passengerRepository.findPassengerModelByEmail(email);
         
         if (passenger != null) {
-            // Check if passenger is eligible for FREE ticket
+            // A. Eligible users (revolutionary, disabled, or age below 6 or above 60) get FREE ticket
             boolean isEligibleForFree = Boolean.TRUE.equals(passenger.getIsRevolutionary()) || 
                                        Boolean.TRUE.equals(passenger.getHasDisability()) ||
                                        isBelow6orAbove60(passenger.getPassengerDateOfBirth());
@@ -214,46 +337,18 @@ public class TicketTypeService {
                 }
             }
             
-            // Check if passenger is a student
+            // B. Student users get student ticket types
             boolean isStudent = passenger.getStudentID() != null && !passenger.getStudentID().isEmpty();
             if (isStudent) {
-                // Return only MONTHLY_STUDENT ticket
-                List<TypeDto> result = new ArrayList<>();
-                Optional<TicketModel> studentTicket = ticketTypeRepository.findById(TicketType.MONTHLY_STUDENT);
-                if (studentTicket.isPresent()) {
-                    result.add(convertToDto(studentTicket.get()));
-                    return result;
-                }
+                return getStudentTicketTypes(metroLineId);
             }
+            
+            // C. Normal users get all standard ticket types
+            return getAllTicketTypes(metroLineId);
         }
         
-        // If metro line ID is provided and passenger isn't eligible for special tickets,
-        // return the best one-way ticket based on the metro line's station count
-        if (metroLineId != null && !metroLineId.isEmpty()) {
-            List<TypeDto> result = new ArrayList<>();
-            TypeDto bestOneWay = getBestTicketByMetroLine(metroLineId);
-            if (bestOneWay != null) {
-                result.add(bestOneWay);
-            }
-            return result;
-        }
-        
-        // For passengers not found or not in special categories, return default tickets
-        return getDefaultTickets();
-    }
-
-    private List<TypeDto> getDefaultTickets() {
-        List<TypeDto> defaultTickets = new ArrayList<>();
-        
-        // Add MONTHLY_ADULT
-        Optional<TicketModel> monthlyAdult = ticketTypeRepository.findById(TicketType.MONTHLY_ADULT);
-        monthlyAdult.ifPresent(ticket -> defaultTickets.add(convertToDto(ticket)));
-        
-        // Add ONE_WAY_4 (will be upgraded later with better one-way logic)
-        Optional<TicketModel> oneWay4 = ticketTypeRepository.findById(TicketType.ONE_WAY_4);
-        oneWay4.ifPresent(ticket -> defaultTickets.add(convertToDto(ticket)));
-        
-        return defaultTickets;
+        // If no passenger found, return guest ticket types
+        return getGuestTicketTypes(metroLineId);
     }
 
     private boolean isBelow6orAbove60(LocalDate dateOfBirth) {
