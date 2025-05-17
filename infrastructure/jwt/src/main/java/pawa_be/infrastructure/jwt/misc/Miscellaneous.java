@@ -26,4 +26,14 @@ public class Miscellaneous {
         return String.format("%s=%s; Path=/; Max-Age=%d; HttpOnly; Secure; SameSite=None",
                 cookie.getName(), cookie.getValue(), cookie.getMaxAge());
     }
+
+    public static String buildTempGoogleCookieWithCredentials(String token) {
+        Cookie cookie = HttpOnlyCookieConfig.createCookie(
+                "TEMP_GOOGLE_AUTH",
+                token
+        );
+
+        return String.format("%s=%s; Path=/; Max-Age=%d; HttpOnly; Secure; SameSite=None",
+                cookie.getName(), cookie.getValue(), cookie.getMaxAge());
+    }
 }
