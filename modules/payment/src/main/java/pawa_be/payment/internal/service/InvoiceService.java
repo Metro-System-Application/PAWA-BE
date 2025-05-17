@@ -135,24 +135,33 @@ class InvoiceService implements IInvoiceService {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * Activates a ticket by its invoice item ID
+     * Sets the activatedAt to current time and calculates expiredAt based on ticket type
+     * 
+     * @param invoiceItemId ID of the invoice item
+     * @return GenericResponseDTO with success status and message
+     */
     @Transactional
     public GenericResponseDTO activateTicket(UUID invoiceItemId) {
         // Find invoice item
         InvoiceItemModel invoiceItem = invoiceItemRepository.findById(invoiceItemId)
                 .orElseThrow(() -> new NotFoundException(String.format("Invoice item with ID '%s' not found", invoiceItemId)));
 
-        // Check if the ticket is already activated
+        LocalDateTime now = LocalDateTime.now();
+        
+        // First check if ticket has expired
+        if (invoiceItem.getExpiredAt() != null && now.isAfter(invoiceItem.getExpiredAt())) {
+            invoiceItem.setStatus(TicketStatus.EXPIRED);
+            invoiceItemRepository.save(invoiceItem);
+            return new GenericResponseDTO<>(false, "Ticket has expired", null);
+        }
+
+        // Then check if ticket is already activated but not expired
         if (invoiceItem.getActivatedAt() != null) {
             updateTicketStatus(invoiceItem);
             invoiceItemRepository.save(invoiceItem);
-            return new GenericResponseDTO<>(false, "Ticket already activated", null);
-        }
-
-        // Check if the ticket has expired (if expiredAt is set for some reason)
-        if (invoiceItem.getExpiredAt() != null && LocalDateTime.now().isAfter(invoiceItem.getExpiredAt())) {
-            invoiceItem.setStatus(TicketStatus.EXPIRED);
-            invoiceItemRepository.save(invoiceItem);
-            return new GenericResponseDTO<>(false, "Ticket already expired", null);
+            return new GenericResponseDTO<>(false, "Ticket has been activated", null);
         }
 
         // Get ticket type to determine duration
@@ -160,7 +169,6 @@ class InvoiceService implements IInvoiceService {
                 .orElseThrow(() -> new NotFoundException(String.format("Ticket type '%s' not found", invoiceItem.getTicketType())));
 
         // Set activation and expiration times
-        LocalDateTime now = LocalDateTime.now();
         invoiceItem.setActivatedAt(now);
         
         // Calculate expiration time based on ticket type's expiry interval
