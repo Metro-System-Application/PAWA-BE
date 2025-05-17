@@ -18,10 +18,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import pawa_be.infrastructure.common.dto.GenericResponseDTO;
 import pawa_be.insfrastructure.stripe.dto.ResponseCreateStripeSessionDTO;
-import pawa_be.payment.internal.dto.RequestPayCheckoutWithStripeDTO;
-import pawa_be.payment.internal.dto.RequestPurchaseTicketForGuestDTO;
-import pawa_be.payment.internal.dto.RequestPurchaseTicketForPassengerDTO;
-import pawa_be.payment.internal.dto.RequestTopUpBalanceDTO;
+import pawa_be.payment.internal.dto.*;
 import pawa_be.payment.internal.service.PaymentService;
 import pawa_be.payment.internal.service.result.PurchaseWithEwalletResult;
 import pawa_be.payment.internal.service.result.PurchaseWithEWalletResultType;
@@ -324,6 +321,24 @@ class PaymentController {
                 );
 
         return handleEwalletPyamentResult(result);
+    }
+
+    @Operation(
+            summary = "Get passenger balance",
+            description = "Returns the balance for a given passenger ID."
+    )
+    @PostMapping("/my-balance")
+    ResponseEntity<GenericResponseDTO<ResponseGetBalanceDTO>> getMyBalance(
+            @Parameter(hidden = true) Authentication authentication) {
+        String passengerId = getUserIdFromAuthentication(authentication);
+
+        ResponseGetBalanceDTO result = paymentService.getBalanceByID(passengerId);
+        return ResponseEntity
+                .ok()
+                .body(new GenericResponseDTO<>(
+                        true,
+                        "",
+                        result));
     }
 
     private ResponseEntity<GenericResponseDTO<?>> handleEwalletPyamentResult(PurchaseWithEwalletResult result) {

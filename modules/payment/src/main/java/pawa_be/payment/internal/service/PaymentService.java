@@ -304,5 +304,17 @@ public class PaymentService {
                 new ResponsePurchaseTicketForPassengerDTO(remainingBalance)
         );
     }
+
+    public ResponseGetBalanceDTO getBalanceByID(String passengerId) {
+        EwalletModel passengerEwallet = eWalletRepository
+                .findByPassengerModel_PassengerID(passengerId)
+                .orElseThrow(
+                        () -> new NotFoundException(
+                                String.format("Passenger with ID '%s' not found", passengerId)
+                        )
+                );
+
+        return new ResponseGetBalanceDTO(passengerEwallet.getBalance());
+    }
 }
 
