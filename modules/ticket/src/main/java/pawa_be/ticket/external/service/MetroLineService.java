@@ -79,11 +79,9 @@ public class MetroLineService {
 
     public List<MetroLineResponse> getAllMetroLines() {
         try {
-            String token = authenticate();
             String url = metroApiBaseUrl + "/api/metro_line";
 
             HttpHeaders headers = new HttpHeaders();
-            headers.set("Authorization", "Bearer " + token);
             headers.set("Accept", MediaType.APPLICATION_JSON_VALUE);
 
             HttpEntity<Void> requestEntity = new HttpEntity<>(headers);
@@ -132,11 +130,9 @@ public class MetroLineService {
      */
     private MetroStation getStationById(String stationId) {
         try {
-            String token = authenticate();
             String url = metroApiBaseUrl + "/api/station/" + stationId;
 
             HttpHeaders headers = new HttpHeaders();
-            headers.set("Authorization", "Bearer " + token);
             headers.set("Accept", MediaType.APPLICATION_JSON_VALUE);
 
             HttpEntity<Void> requestEntity = new HttpEntity<>(headers);
@@ -177,11 +173,9 @@ public class MetroLineService {
 
     public MetroLineResponse getMetroLineById(String metroLineId) {
         try {
-            String token = authenticate();
             String url = metroApiBaseUrl + "/api/metro_line/" + metroLineId;
 
             HttpHeaders headers = new HttpHeaders();
-            headers.set("Authorization", "Bearer " + token);
             headers.set("Accept", MediaType.APPLICATION_JSON_VALUE);
 
             HttpEntity<Void> requestEntity = new HttpEntity<>(headers);

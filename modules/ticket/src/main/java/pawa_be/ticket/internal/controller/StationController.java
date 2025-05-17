@@ -9,6 +9,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import pawa_be.infrastructure.common.dto.GenericResponseDTO;
 import pawa_be.ticket.external.service.StationService;
@@ -28,18 +29,20 @@ public class StationController {
         this.stationService = stationService;
     }
 
-    @Operation(summary = "Get all stations", description = "Returns all metro stations")
+    @Operation(summary = "Get stations", description = "Returns metro stations, optionally filtered by metro line")
     @GetMapping("/stations")
     @ApiResponse(responseCode = "200", description = "Stations retrieved successfully")
     @ApiResponse(responseCode = "500", description = "Internal server error or external service unavailable")
-    public ResponseEntity<GenericResponseDTO<List<StationDto>>> getAllStations() {
+    public ResponseEntity<GenericResponseDTO<List<StationDto>>> getStations(
+            @RequestParam(required = false) String metroLineId) {
         try {
-            List<StationDto> stations = stationService.getAllStationsDto();
+            List<StationDto> stations = stationService.getStationsDto(metroLineId);
 
             return ResponseEntity.ok(
                     new GenericResponseDTO<>(
                             true,
-                            "Stations retrieved successfully",
+                            metroLineId == null ? "All stations retrieved successfully" 
+                                    : "Stations for metro line retrieved successfully",
                             stations));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
