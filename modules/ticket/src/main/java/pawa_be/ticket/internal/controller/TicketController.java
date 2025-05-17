@@ -26,14 +26,24 @@ class TicketController {
                 this.ticketTypeService = ticketTypeService;
         }
 
-        @Operation(summary = "Get all ticket types", description = "Returns all active ticket types")
+        @Operation(summary = "Get all ticket types for guests", 
+                  description = "Returns filtered ticket types for guests based on the metro line: ONE_WAY (based on metro line), DAILY, THREE_DAY, MONTHLY_ADULT")
         @GetMapping("/ticket-types")
         @ApiResponse(responseCode = "200", description = "Ticket types retrieved successfully")
-        @ApiResponse(responseCode = "401", description = "Unauthorized - user not authenticated")
+        @ApiResponse(responseCode = "400", description = "Missing required parameter")
         @ApiResponse(responseCode = "500", description = "Internal server error")
-        ResponseEntity<GenericResponseDTO<List<TypeDto>>> getTicketTypes() {
+        ResponseEntity<GenericResponseDTO<List<TypeDto>>> getTicketTypes(
+                @RequestParam(required = true) String metroLineId) {
                 try {
-                        List<TypeDto> ticketTypes = ticketTypeService.getAllTicketTypes();
+                        if (metroLineId == null || metroLineId.trim().isEmpty()) {
+                                return ResponseEntity.ok(
+                                        new GenericResponseDTO<>(
+                                                false,
+                                                "Metro line ID is required",
+                                                new ArrayList<>()));
+                        }
+
+                        List<TypeDto> ticketTypes = ticketTypeService.getGuestTicketTypes(metroLineId);
 
                         return ResponseEntity.ok(
                                         new GenericResponseDTO<>(
@@ -50,13 +60,14 @@ class TicketController {
         }
 
         @Operation(summary = "Get best ticket types for passenger", 
-                  description = "Returns the most advantageous ticket types for a specific passenger based on eligibility. " +
-                                "When metro line ID is provided, the best one-way ticket is calculated based on the number of stations in that line.")
+                  description = "Returns the most advantageous ticket types for a specific passenger based on eligibility: " +
+                              "Eligible users get FREE ticket, Students get student-specific tickets, Normal users get standard tickets")
         @GetMapping("/best-ticket")
         @ApiResponse(responseCode = "200", description = "Best ticket options retrieved successfully")
+        @ApiResponse(responseCode = "400", description = "Missing required parameters")
         ResponseEntity<GenericResponseDTO<List<TypeDto>>> getBestTicketForPassenger(
                         @RequestParam(required = true) String email,
-                        @RequestParam(required = false) String metroLineId) {
+                        @RequestParam(required = true) String metroLineId) {
 
                 if (email == null || email.trim().isEmpty()) {
                         return ResponseEntity.ok(
@@ -66,18 +77,17 @@ class TicketController {
                                         new ArrayList<>()));
                 }
 
+                if (metroLineId == null || metroLineId.trim().isEmpty()) {
+                        return ResponseEntity.ok(
+                                new GenericResponseDTO<>(
+                                        false,
+                                        "Metro line ID is required",
+                                        new ArrayList<>()));
+                }
+
                 try {
                         List<TypeDto> bestTickets = ticketTypeService.getBestTicketsForPassengerWithMetroLine(
                                 email, metroLineId);
-                        
-                        if (bestTickets.isEmpty() && metroLineId != null && !metroLineId.isEmpty()) {
-                            return ResponseEntity.ok(
-                                new GenericResponseDTO<>(
-                                        false,
-                                        "Invalid metro line ID: " + metroLineId,
-                                        new ArrayList<>()));
-                        }
-                        
                         return ResponseEntity.ok(
                                 new GenericResponseDTO<>(
                                         true,
