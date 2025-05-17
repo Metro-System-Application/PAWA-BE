@@ -13,7 +13,6 @@ import java.util.UUID;
 @AllArgsConstructor
 public class InvoiceItemDTO {
     private UUID invoiceItemID;
-    private String ticketName;
     private String ticketType;
     private BigDecimal price;
     private LocalDateTime activatedAt;

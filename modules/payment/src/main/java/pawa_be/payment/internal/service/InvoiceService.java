@@ -18,7 +18,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
-public class InvoiceService {
+class InvoiceService implements IInvoiceService {
 
     @Autowired
     private InvoiceRepository invoiceRepository;
@@ -64,7 +64,6 @@ public class InvoiceService {
                 .map(cartItem -> {
                     InvoiceItemModel item = new InvoiceItemModel();
                     item.setInvoiceModel(savedInvoice);
-                    item.setTicketName(cartItem.getTicketType());
                     item.setTicketType(cartItem.getTicketType());
                     item.setPrice(cartItem.getPrice());
                     item.setLineID(cartItem.getLineID());
@@ -133,7 +132,6 @@ public class InvoiceService {
         List<InvoiceItemDTO> itemDTOs = items.stream()
                 .map(item -> new InvoiceItemDTO(
                         item.getInvoiceItemID(),
-                        item.getTicketName(),
                         item.getTicketType(),
                         item.getPrice(),
                         item.getActivatedAt(),

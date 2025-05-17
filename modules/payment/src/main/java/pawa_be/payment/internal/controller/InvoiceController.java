@@ -18,7 +18,7 @@ import pawa_be.payment.internal.dto.InvoiceDTO;
 import pawa_be.payment.internal.dto.RequestCreateInvoiceDTO;
 import pawa_be.payment.internal.dto.RequestInvoiceByEmailDTO;
 import pawa_be.payment.internal.dto.ResponseCreateInvoiceDTO;
-import pawa_be.payment.internal.service.InvoiceService;
+import pawa_be.payment.internal.service.IInvoiceService;
 
 import java.util.List;
 import java.util.UUID;
@@ -32,7 +32,7 @@ import static pawa_be.infrastructure.jwt.misc.Miscellaneous.getUserIdFromAuthent
 public class InvoiceController {
 
         @Autowired
-        private final InvoiceService invoiceService;
+        private final IInvoiceService invoiceService;
 
         @Operation(summary = "Create a new invoice after payment", description = "Creates a new invoice with associated items after payment is successful")
         @ApiResponses(value = {
