@@ -130,7 +130,7 @@ public class MetroLineService {
      * @param stationId The ID of the station to retrieve
      * @return The station with the specified ID
      */
-    public MetroStation getStationById(String stationId) {
+    private MetroStation getStationById(String stationId) {
         try {
             String token = authenticate();
             String url = metroApiBaseUrl + "/api/station/" + stationId;
