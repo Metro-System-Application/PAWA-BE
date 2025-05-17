@@ -32,36 +32,54 @@ class TicketController {
         @ApiResponse(responseCode = "401", description = "Unauthorized - user not authenticated")
         @ApiResponse(responseCode = "500", description = "Internal server error")
         ResponseEntity<GenericResponseDTO<List<TypeDto>>> getTicketTypes() {
+                try {
+                        List<TypeDto> ticketTypes = ticketTypeService.getAllTicketTypes();
 
-                List<TypeDto> ticketTypes = ticketTypeService.getAllTicketTypes();
-
-                return ResponseEntity.ok(
+                        return ResponseEntity.ok(
+                                        new GenericResponseDTO<>(
+                                                        true,
+                                                        "Ticket types retrieved successfully",
+                                                        ticketTypes));
+                } catch (Exception e) {
+                        return ResponseEntity.ok(
                                 new GenericResponseDTO<>(
-                                                true,
-                                                "Ticket types retrieved successfully",
-                                                ticketTypes));
+                                        false,
+                                        "Error retrieving ticket types: " + e.getMessage(),
+                                        new ArrayList<>()));
+                }
         }
 
         @Operation(summary = "Get best ticket types for passenger", 
-                  description = "Returns the most advantageous ticket types for a specific passenger based on eligibility and route. " +
-                                "When start and end stations are provided, the best one-way ticket is calculated based on the number of stations.")
+                  description = "Returns the most advantageous ticket types for a specific passenger based on eligibility. " +
+                                "When metro line ID is provided, the best one-way ticket is calculated based on the number of stations in that line.")
         @GetMapping("/best-ticket")
         @ApiResponse(responseCode = "200", description = "Best ticket options retrieved successfully")
-        ResponseEntity<List<TypeDto>> getBestTicketForPassenger(
+        ResponseEntity<GenericResponseDTO<List<TypeDto>>> getBestTicketForPassenger(
                         @RequestParam(required = true) String email,
-                        @RequestParam(required = false) String startStationId,
-                        @RequestParam(required = false) String endStationId) {
+                        @RequestParam(required = false) String metroLineId) {
 
                 if (email == null || email.trim().isEmpty()) {
-                        return ResponseEntity.ok(new ArrayList<>());
+                        return ResponseEntity.ok(
+                                new GenericResponseDTO<>(
+                                        false,
+                                        "Email is required",
+                                        new ArrayList<>()));
                 }
 
                 try {
-                        List<TypeDto> bestTickets = ticketTypeService.getBestTicketsForPassengerWithRoute(
-                                email, startStationId, endStationId);
-                        return ResponseEntity.ok(bestTickets);
+                        List<TypeDto> bestTickets = ticketTypeService.getBestTicketsForPassengerWithMetroLine(
+                                email, metroLineId);
+                        return ResponseEntity.ok(
+                                new GenericResponseDTO<>(
+                                        true,
+                                        "Best ticket options retrieved successfully",
+                                        bestTickets));
                 } catch (Exception e) {
-                        return ResponseEntity.ok(new ArrayList<>());
+                        return ResponseEntity.ok(
+                                new GenericResponseDTO<>(
+                                        false,
+                                        "Error retrieving ticket options: " + e.getMessage(),
+                                        new ArrayList<>()));
                 }
         }
 }
