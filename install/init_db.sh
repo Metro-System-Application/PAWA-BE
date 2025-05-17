@@ -78,21 +78,30 @@ CREATE TABLE IF NOT EXISTS user_auth (
 );
 "
 
+psql -U pawa_admin -d pawa_be_db -c "
+CREATE TABLE IF NOT EXISTS e_wallet (
+    walletid      UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    balance       NUMERIC(38,2) NOT NULL,
+    passenger_id  VARCHAR(255) UNIQUE NOT NULL
+        REFERENCES passenger(passengerid) ON DELETE CASCADE
+);
+"
+
 # INSERT SAMPLE DATA
 psql -U pawa_admin -d pawa_be_db <<EOF
 
 INSERT INTO user_auth (user_id, email, password, role, google_id)
 VALUES
-    ('00000000-0000-0000-0000-000000000001', 'an.nguyenvan@gmail.com', '$2a$10$rH4iP4KPMO2OLnelKKnfD.4szQ.ds7M1ie4yKPQfbCrHqjyssecV', 'PASSENGER', NULL),
-    ('00000000-0000-0000-0000-000000000002', 'binh.lethi@gmail.com', '$2a$10$rH4iP4KPMO2OLnelKKnfD.4szQ.ds7M1ie4yKPQfbCrHqjyssecV', 'PASSENGER', NULL),
-    ('00000000-0000-0000-0000-000000000003', 'cuong.phamminh@gmail.com', '$2a$10$rH4iP4KPMO2OLnelKKnfD.4szQ.ds7M1ie4yKPQfbCrHqjyssecV', 'PASSENGER', NULL),
-    ('00000000-0000-0000-0000-000000000004', 'linh.tranngoc@gmail.com', '$2a$10$rH4iP4KPMO2OLnelKKnfD.4szQ.ds7M1ie4yKPQfbCrHqjyssecV', 'PASSENGER', NULL),
-    ('00000000-0000-0000-0000-000000000005', 'hieu.doquy@gmail.com', '$2a$10$rH4iP4KPMO2OLnelKKnfD.4szQ.ds7M1ie4yKPQfbCrHqjyssecV', 'PASSENGER', NULL),
-    ('00000000-0000-0000-0000-000000000006', 'giang.hoangthi@gmail.com', '$2a$10$rH4iP4KPMO2OLnelKKnfD.4szQ.ds7M1ie4yKPQfbCrHqjyssecV', 'PASSENGER', NULL),
-    ('00000000-0000-0000-0000-000000000007', 'khanh.nguyenvan@gmail.com', '$2a$10$rH4iP4KPMO2OLnelKKnfD.4szQ.ds7M1ie4yKPQfbCrHqjyssecV', 'PASSENGER', NULL),
-    ('00000000-0000-0000-0000-000000000008', 'linh.vothuy@gmail.com', '$2a$10$rH4iP4KPMO2OLnelKKnfD.4szQ.ds7M1ie4yKPQfbCrHqjyssecV', 'PASSENGER', NULL),
-    ('00000000-0000-0000-0000-000000000009', 'minh.buinhat@gmail.com', '$2a$10$rH4iP4KPMO2OLnelKKnfD.4szQ.ds7M1ie4yKPQfbCrHqjyssecV', 'PASSENGER', NULL),
-    ('00000000-0000-0000-0000-000000000010', 'ngoc.danganh@gmail.com', '$2a$10$rH4iP4KPMO2OLnelKKnfD.4szQ.ds7M1ie4yKPQfbCrHqjyssecV', 'PASSENGER', NULL)
+    ('00000000-0000-0000-0000-000000000001', 'an.nguyenvan@gmail.com', '\$2a\$10\$3fnBm5wZ5/8dVi70XdaQc.myHbMTulDwMoUMarOSGaZcACYeHFMPy', 'PASSENGER', NULL),
+    ('00000000-0000-0000-0000-000000000002', 'binh.lethi@gmail.com', '\$2a\$10\$3fnBm5wZ5/8dVi70XdaQc.myHbMTulDwMoUMarOSGaZcACYeHFMPy', 'PASSENGER', NULL),
+    ('00000000-0000-0000-0000-000000000003', 'cuong.phamminh@gmail.com', '\$2a\$10\$3fnBm5wZ5/8dVi70XdaQc.myHbMTulDwMoUMarOSGaZcACYeHFMPy', 'PASSENGER', NULL),
+    ('00000000-0000-0000-0000-000000000004', 'linh.tranngoc@gmail.com', '\$2a\$10\$3fnBm5wZ5/8dVi70XdaQc.myHbMTulDwMoUMarOSGaZcACYeHFMPy', 'PASSENGER', NULL),
+    ('00000000-0000-0000-0000-000000000005', 'hieu.doquy@gmail.com', '\$2a\$10\$3fnBm5wZ5/8dVi70XdaQc.myHbMTulDwMoUMarOSGaZcACYeHFMPy', 'PASSENGER', NULL),
+    ('00000000-0000-0000-0000-000000000006', 'giang.hoangthi@gmail.com', '\$2a\$10\$3fnBm5wZ5/8dVi70XdaQc.myHbMTulDwMoUMarOSGaZcACYeHFMPy', 'PASSENGER', NULL),
+    ('00000000-0000-0000-0000-000000000007', 'khanh.nguyenvan@gmail.com', '\$2a\$10\$3fnBm5wZ5/8dVi70XdaQc.myHbMTulDwMoUMarOSGaZcACYeHFMPy', 'PASSENGER', NULL),
+    ('00000000-0000-0000-0000-000000000008', 'linh.vothuy@gmail.com', '\$2a\$10\$3fnBm5wZ5/8dVi70XdaQc.myHbMTulDwMoUMarOSGaZcACYeHFMPy', 'PASSENGER', NULL),
+    ('00000000-0000-0000-0000-000000000009', 'minh.buinhat@gmail.com', '\$2a\$10\$3fnBm5wZ5/8dVi70XdaQc.myHbMTulDwMoUMarOSGaZcACYeHFMPy', 'PASSENGER', NULL),
+    ('00000000-0000-0000-0000-000000000010', 'ngoc.danganh@gmail.com', '\$2a\$10\$3fnBm5wZ5/8dVi70XdaQc.myHbMTulDwMoUMarOSGaZcACYeHFMPy', 'PASSENGER', NULL)
 ON CONFLICT (user_id) DO NOTHING;
 
 INSERT INTO passenger (
@@ -114,6 +123,15 @@ INSERT INTO passenger (
 ON CONFLICT (passengerid) DO NOTHING;
 
 EOF
+
+# CREATE EWALLETS
+psql -U pawa_admin -d pawa_be_db <<'SQL'
+INSERT INTO e_wallet (balance, passenger_id)
+SELECT 0, p.passengerid
+FROM   passenger p
+LEFT   JOIN e_wallet w ON w.passenger_id = p.passengerid
+WHERE  w.passenger_id IS NULL;
+SQL
 
 FIRST_METRO_LINE_ID=$(curl -s 'http://localhost:8081/api/metro_line' | jq -r '.[0].metroLine.id')
 FIRST_METRO_LINE_FIRST_STATION_ID=$(curl -s 'http://localhost:8081/api/metro_line' | jq -r '.[0].firstStation.id')
