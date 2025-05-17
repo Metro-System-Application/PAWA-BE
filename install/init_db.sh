@@ -139,7 +139,8 @@ FIRST_METRO_LINE_LAST_STATION_ID=$(curl -s 'http://localhost:8081/api/metro_line
 
 # ADD INVOICE ITEMS / TICKETS
 psql -U pawa_admin -d pawa_be_db <<SQL
-\set iid 11111111-1111-1111-1111-111111111111
+\set iid   11111111-1111-1111-1111-111111111111
+\set iid2  11111111-1111-1111-1111-111111111112
 \set line  '$FIRST_METRO_LINE_ID'
 \set ssta  '$FIRST_METRO_LINE_FIRST_STATION_ID'
 \set esta  '$FIRST_METRO_LINE_LAST_STATION_ID'
@@ -151,14 +152,21 @@ VALUES ('11111111-1111-1111-1111-111111111111',
         1480000)
 ON CONFLICT (invoiceid) DO NOTHING;
 
+INSERT INTO invoice (invoiceid, passenger_id, email, total_price)
+VALUES ('11111111-1111-1111-1111-111111111112',
+        '00000000-0000-0000-0000-000000000005',
+        'hieu.doquy@gmail.com',
+        0)
+ON CONFLICT (invoiceid) DO NOTHING;
+
 INSERT INTO invoice_item(invoice_itemid,invoice_id,ticket_type,status,
                          price,activated_at,expired_at,lineid,line_name,start_station,end_station,
                          duration,purchased_at)
 VALUES
-  (gen_random_uuid(), :'iid','FREE','EXPIRED',0,
+  (gen_random_uuid(), :'iid2','FREE','EXPIRED',0,
    '2024-05-10 08:00','2024-05-11 08:00',
    :'line','Metro Line', :'ssta', :'esta', 1,'2024-05-10 07:00'),
-  (gen_random_uuid(), :'iid','FREE','EXPIRED',0,
+  (gen_random_uuid(), :'iid2','FREE','EXPIRED',0,
    '2024-05-20 08:00','2024-05-21 08:00',
    :'line','Metro Line', :'ssta', :'esta', 1,'2024-05-20 07:00');
 
