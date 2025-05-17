@@ -17,11 +17,8 @@ import java.util.UUID;
 public class CartItemDto {
     private UUID cartItemId;
     private UUID lineId;
-    private String lineName;
     private UUID startStationId;
-    private String startStationName;
     private UUID endStationId;
-    private String endStationName;
     private TicketType ticketType;
     private String ticketTypeName;
     private BigDecimal price;
