@@ -3,6 +3,7 @@ package pawa_be.payment.internal.model;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
+import pawa_be.payment.internal.enumeration.TicketStatus;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -21,10 +22,11 @@ public class InvoiceItemModel {
     private InvoiceModel invoiceModel;
 
     @Column(nullable = false)
-    private String ticketName;
-
-    @Column(nullable = false)
     private String ticketType;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private TicketStatus status;
 
     @Column(nullable = false)
     private BigDecimal price;

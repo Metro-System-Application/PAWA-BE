@@ -5,7 +5,7 @@ import org.springframework.stereotype.Service;
 import pawa_be.payment.internal.dto.InvoiceDTO;
 import pawa_be.payment.internal.dto.RequestCreateInvoiceDTO;
 import pawa_be.payment.internal.dto.ResponseCreateInvoiceDTO;
-import pawa_be.payment.internal.service.InvoiceService;
+import pawa_be.payment.internal.service.IInvoiceService;
 
 import java.util.List;
 import java.util.UUID;
@@ -14,7 +14,7 @@ import java.util.UUID;
 public class ExternalInvoiceService implements IExternalInvoiceService {
 
     @Autowired
-    private InvoiceService invoiceService;
+    private IInvoiceService invoiceService;
 
     @Override
     public ResponseCreateInvoiceDTO createInvoice(RequestCreateInvoiceDTO requestCreateInvoiceDTO) {
