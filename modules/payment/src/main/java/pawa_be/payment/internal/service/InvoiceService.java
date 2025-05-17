@@ -3,16 +3,23 @@ package pawa_be.payment.internal.service;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import pawa_be.infrastructure.common.dto.GenericResponseDTO;
 import pawa_be.infrastructure.common.validation.exceptions.NotFoundException;
 import pawa_be.payment.internal.dto.*;
+import pawa_be.payment.internal.enumeration.TicketStatus;
 import pawa_be.payment.internal.model.InvoiceItemModel;
 import pawa_be.payment.internal.model.InvoiceModel;
 import pawa_be.payment.internal.repository.InvoiceItemRepository;
 import pawa_be.payment.internal.repository.InvoiceRepository;
 import pawa_be.profile.internal.model.PassengerModel;
 import pawa_be.profile.internal.repository.PassengerRepository;
+import pawa_be.ticket.external.enumerator.TicketType;
+import pawa_be.ticket.internal.model.TicketModel;
+import pawa_be.ticket.internal.repository.TicketTypeRepository;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -28,6 +35,9 @@ class InvoiceService implements IInvoiceService {
 
     @Autowired
     private PassengerRepository passengerRepository;
+
+    @Autowired
+    private TicketTypeRepository ticketTypeRepository;
 
     /**
      * Create a new invoice with its items after payment is successful
@@ -65,11 +75,13 @@ class InvoiceService implements IInvoiceService {
                     InvoiceItemModel item = new InvoiceItemModel();
                     item.setInvoiceModel(savedInvoice);
                     item.setTicketType(cartItem.getTicketType());
+                    item.setStatus(TicketStatus.INACTIVE);
                     item.setPrice(cartItem.getPrice());
                     item.setLineID(cartItem.getLineID());
                     item.setLineName(cartItem.getLineName());
                     item.setStartStation(cartItem.getStartStation());
                     item.setEndStation(cartItem.getEndStation());
+                    item.setDuration(cartItem.getAmount() > 0 ? (int)cartItem.getAmount() : 1);
                     // activatedAt and expiredAt will be set when the ticket is activated
                     return item;
                 })
@@ -123,16 +135,71 @@ class InvoiceService implements IInvoiceService {
                 .collect(Collectors.toList());
     }
 
-    /**
-     * Helper method to convert InvoiceModel to InvoiceDTO with items
-     */
+    @Transactional
+    public GenericResponseDTO activateTicket(UUID invoiceItemId) {
+        // Find invoice item
+        InvoiceItemModel invoiceItem = invoiceItemRepository.findById(invoiceItemId)
+                .orElseThrow(() -> new NotFoundException(String.format("Invoice item with ID '%s' not found", invoiceItemId)));
+
+        // Check if the ticket is already activated
+        if (invoiceItem.getActivatedAt() != null) {
+            updateTicketStatus(invoiceItem);
+            invoiceItemRepository.save(invoiceItem);
+            return new GenericResponseDTO<>(false, "Ticket already activated", null);
+        }
+
+        // Check if the ticket has expired (if expiredAt is set for some reason)
+        if (invoiceItem.getExpiredAt() != null && LocalDateTime.now().isAfter(invoiceItem.getExpiredAt())) {
+            invoiceItem.setStatus(TicketStatus.EXPIRED);
+            invoiceItemRepository.save(invoiceItem);
+            return new GenericResponseDTO<>(false, "Ticket already expired", null);
+        }
+
+        // Get ticket type to determine duration
+        TicketModel ticketType = ticketTypeRepository.findById(TicketType.valueOf(invoiceItem.getTicketType()))
+                .orElseThrow(() -> new NotFoundException(String.format("Ticket type '%s' not found", invoiceItem.getTicketType())));
+
+        // Set activation and expiration times
+        LocalDateTime now = LocalDateTime.now();
+        invoiceItem.setActivatedAt(now);
+        
+        // Calculate expiration time based on ticket type's expiry interval
+        LocalDateTime expirationTime = now.plus(ticketType.getExpiryInterval());
+        invoiceItem.setExpiredAt(expirationTime);
+        
+        // Update status to ACTIVE
+        invoiceItem.setStatus(TicketStatus.ACTIVE);
+        
+        // Save the updated invoice item
+        invoiceItemRepository.save(invoiceItem);
+        
+        return new GenericResponseDTO<>(true, "Ticket activated successfully", null);
+    }
+
+    private void updateTicketStatus(InvoiceItemModel invoiceItem) {
+        LocalDateTime now = LocalDateTime.now();
+        
+        if (invoiceItem.getActivatedAt() == null) {
+            invoiceItem.setStatus(TicketStatus.INACTIVE);
+        } else if (invoiceItem.getExpiredAt() != null && now.isAfter(invoiceItem.getExpiredAt())) {
+            invoiceItem.setStatus(TicketStatus.EXPIRED);
+        } else {
+            invoiceItem.setStatus(TicketStatus.ACTIVE);
+        }
+    }
+
     private InvoiceDTO convertToInvoiceDTO(InvoiceModel invoiceModel) {
         List<InvoiceItemModel> items = invoiceItemRepository.findByInvoiceModel(invoiceModel);
+        
+        // Update status of each item before converting to DTO
+        items.forEach(this::updateTicketStatus);
+        invoiceItemRepository.saveAll(items);
 
         List<InvoiceItemDTO> itemDTOs = items.stream()
                 .map(item -> new InvoiceItemDTO(
                         item.getInvoiceItemID(),
                         item.getTicketType(),
+                        item.getStatus(),
                         item.getPrice(),
                         item.getActivatedAt(),
                         item.getExpiredAt(),
@@ -150,5 +217,36 @@ class InvoiceService implements IInvoiceService {
                 invoiceModel.getTotalPrice(),
                 invoiceModel.getPurchasedAt(),
                 itemDTOs);
+    }
+
+    public List<InvoiceItemDTO> getMyInvoiceItemsByStatus(String passengerId, TicketStatus status) {
+        List<InvoiceModel> invoices = invoiceRepository.findByPassengerModel_PassengerID(passengerId);
+        
+        List<InvoiceItemModel> allItems = new ArrayList<>();
+        for (InvoiceModel invoice : invoices) {
+            List<InvoiceItemModel> items = invoiceItemRepository.findByInvoiceModel(invoice);
+            allItems.addAll(items);
+        }
+        
+        // Update status of all items before filtering
+        allItems.forEach(this::updateTicketStatus);
+        invoiceItemRepository.saveAll(allItems);
+        
+        // Filter by requested status
+        return allItems.stream()
+                .filter(item -> item.getStatus() == status)
+                .map(item -> new InvoiceItemDTO(
+                        item.getInvoiceItemID(),
+                        item.getTicketType(),
+                        item.getStatus(),
+                        item.getPrice(),
+                        item.getActivatedAt(),
+                        item.getExpiredAt(),
+                        item.getLineID(),
+                        item.getLineName(),
+                        item.getStartStation(),
+                        item.getEndStation(),
+                        item.getDuration()))
+                .collect(Collectors.toList());
     }
 }

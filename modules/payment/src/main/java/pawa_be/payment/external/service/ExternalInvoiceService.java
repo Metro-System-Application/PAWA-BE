@@ -2,9 +2,12 @@ package pawa_be.payment.external.service;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import pawa_be.infrastructure.common.dto.GenericResponseDTO;
 import pawa_be.payment.internal.dto.InvoiceDTO;
+import pawa_be.payment.internal.dto.InvoiceItemDTO;
 import pawa_be.payment.internal.dto.RequestCreateInvoiceDTO;
 import pawa_be.payment.internal.dto.ResponseCreateInvoiceDTO;
+import pawa_be.payment.internal.enumeration.TicketStatus;
 import pawa_be.payment.internal.service.IInvoiceService;
 
 import java.util.List;
@@ -34,5 +37,15 @@ public class ExternalInvoiceService implements IExternalInvoiceService {
     @Override
     public List<InvoiceDTO> getInvoicesByEmail(String email) {
         return invoiceService.getInvoicesByEmail(email);
+    }
+    
+    @Override
+    public GenericResponseDTO activateTicket(UUID invoiceItemId) {
+        return invoiceService.activateTicket(invoiceItemId);
+    }
+    
+    @Override
+    public List<InvoiceItemDTO> getInvoiceItemsByStatus(String passengerId, TicketStatus status) {
+        return invoiceService.getMyInvoiceItemsByStatus(passengerId, status);
     }
 }
