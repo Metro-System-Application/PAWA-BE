@@ -40,11 +40,9 @@ public class StationService {
      */
     public List<MetroStation> getAllStations() {
         try {
-            String token = metroLineService.authenticate();
             String url = metroApiBaseUrl + "/api/station";
 
             HttpHeaders headers = new HttpHeaders();
-            headers.set("Authorization", "Bearer " + token);
             headers.set("Accept", MediaType.APPLICATION_JSON_VALUE);
 
             HttpEntity<Void> requestEntity = new HttpEntity<>(headers);
@@ -95,11 +93,9 @@ public class StationService {
      */
     public MetroStation getStationById(String stationId) {
         try {
-            String token = metroLineService.authenticate();
             String url = metroApiBaseUrl + "/api/station/" + stationId;
 
             HttpHeaders headers = new HttpHeaders();
-            headers.set("Authorization", "Bearer " + token);
             headers.set("Accept", MediaType.APPLICATION_JSON_VALUE);
 
             HttpEntity<Void> requestEntity = new HttpEntity<>(headers);
@@ -176,5 +172,74 @@ public class StationService {
      */
     public StationDto getStationDtoById(String stationId) {
         return convertToDto(getStationById(stationId));
+    }
+
+    /**
+     * Get stations with optional metro line filtering
+     *
+     * @param metroLineId Optional metro line ID to filter stations
+     * @return List of stations, filtered by metro line if specified
+     */
+    public List<MetroStation> getStations(String metroLineId) {
+        if (metroLineId == null || metroLineId.trim().isEmpty()) {
+            return getAllStations();
+        }
+
+        try {
+            String url = metroApiBaseUrl + "/api/station?byMetroLine=" + metroLineId;
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.set("Accept", MediaType.APPLICATION_JSON_VALUE);
+
+            HttpEntity<Void> requestEntity = new HttpEntity<>(headers);
+
+            try {
+                ResponseEntity<String> rawResponse = restTemplate.exchange(
+                        url,
+                        HttpMethod.GET,
+                        requestEntity,
+                        String.class);
+
+                if (rawResponse.getStatusCode() == HttpStatus.OK && rawResponse.getBody() != null) {
+                    ObjectMapper objectMapper = new ObjectMapper();
+                    objectMapper.registerModule(new JavaTimeModule());
+                    objectMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+
+                    try {
+                        List<MetroStation> stations = objectMapper.readValue(
+                                rawResponse.getBody(),
+                                new TypeReference<List<MetroStation>>() {
+                                });
+
+                        return stations;
+                    } catch (Exception e) {
+                        log.error("Failed to parse station data: {}", e.getMessage());
+                        throw new RuntimeException("Failed to parse station data: " + e.getMessage());
+                    }
+                } else {
+                    log.error("Failed to fetch stations. Status code: {}", rawResponse.getStatusCode());
+                    throw new RuntimeException(
+                            "Failed to fetch stations. Status code: " + rawResponse.getStatusCode());
+                }
+            } catch (Exception e) {
+                log.error("Error communicating with station API: {}", e.getMessage());
+                throw new RuntimeException("Error communicating with station API: " + e.getMessage());
+            }
+        } catch (Exception e) {
+            log.error("Failed to retrieve stations by metro line: {}", e.getMessage());
+            throw new RuntimeException("Failed to retrieve stations by metro line: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Get stations as DTOs with optional metro line filtering
+     *
+     * @param metroLineId Optional metro line ID to filter stations
+     * @return List of station DTOs, filtered by metro line if specified
+     */
+    public List<StationDto> getStationsDto(String metroLineId) {
+        return getStations(metroLineId).stream()
+                .map(this::convertToDto)
+                .collect(Collectors.toList());
     }
 }

@@ -33,11 +33,9 @@ public class ScheduleService {
     }
     public List<Schedule> getScheduleByMetroLine(String metroLineId) {
         try {
-            String token = metroLineService.authenticate();
             String url = metroApiBaseUrl + "/api/schedule/metro_line/" + metroLineId;
 
             HttpHeaders headers = new HttpHeaders();
-            headers.set("Authorization", "Bearer " + token);
             headers.set("Accept", MediaType.APPLICATION_JSON_VALUE);
 
             HttpEntity<Void> requestEntity = new HttpEntity<>(headers);
@@ -86,13 +84,11 @@ public class ScheduleService {
 
     public List<Schedule> getScheduleBetweenStations(String startStationId, String endStationId, String dateTime) {
         try {
-            String token = metroLineService.authenticate();
             String url = metroApiBaseUrl + "/api/schedule/stations?start=" + startStationId 
                         + "&end=" + endStationId 
                         + "&dateTime=" + dateTime;
 
             HttpHeaders headers = new HttpHeaders();
-            headers.set("Authorization", "Bearer " + token);
             headers.set("Accept", MediaType.APPLICATION_JSON_VALUE);
 
             HttpEntity<Void> requestEntity = new HttpEntity<>(headers);
@@ -153,11 +149,9 @@ public class ScheduleService {
 
     private void getStationExistence(String stationId, String position) {
         try {
-            String token = metroLineService.authenticate();
             String url = metroApiBaseUrl + "/api/station/" + stationId;
             
             HttpHeaders headers = new HttpHeaders();
-            headers.set("Authorization", "Bearer " + token);
             headers.set("Accept", MediaType.APPLICATION_JSON_VALUE);
             
             HttpEntity<Void> requestEntity = new HttpEntity<>(headers);
