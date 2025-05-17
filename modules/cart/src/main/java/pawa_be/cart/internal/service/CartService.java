@@ -183,8 +183,6 @@ public class CartService {
                 .cartItemId(item.getCartItemID())
                 .lineId(item.getLineID())
                 .amount(item.getAmount())
-                // Station names would ideally come from an integration with a metro line
-                // service
                 .startStationId(item.getStartStationID())
                 .endStationId(item.getEndStationID())
                 .ticketType(item.getType().getTicketType())
