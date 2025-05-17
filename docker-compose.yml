@@ -38,16 +38,18 @@ services:
       - "host.docker.internal:host-gateway"
 
   postgres:
-    image: 'postgres:latest'
+    build: ./db
     container_name: 'pawa_postgres'
     ports:
-      - "5432:5432"
+      - "54320:5432"
     environment:
       POSTGRES_DB: 'pawa_be_db'
       POSTGRES_USER: 'pawa_admin'
       POSTGRES_PASSWORD: '123'
     volumes:
       - '.postgres-data:/var/lib/postgresql/data'
+      - './db:/docker-entrypoint-initdb.d'
 
 volumes:
   minio-data:
+  postgres-data:
