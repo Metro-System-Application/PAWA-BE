@@ -26,7 +26,7 @@ import java.util.UUID;
 import static pawa_be.infrastructure.jwt.misc.Miscellaneous.getUserIdFromAuthentication;
 
 @RestController
-@RequestMapping("/payment/invoice")
+@RequestMapping("/invoice")
 @Tag(name = "Invoice Controller", description = "Operations related to invoices in the payment system")
 @RequiredArgsConstructor
 public class InvoiceController {
