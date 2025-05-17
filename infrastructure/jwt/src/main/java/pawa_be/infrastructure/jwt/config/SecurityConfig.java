@@ -79,6 +79,7 @@ public class SecurityConfig {
                         .requestMatchers("/metro-lines/**").permitAll()
                         .requestMatchers("/stations/**").permitAll()
                         .requestMatchers("/schedule/**").permitAll()
+                        .requestMatchers("/suspensions/**").permitAll()
                         .requestMatchers("/payment/success", "/payment/direct-ticket/guest").permitAll()
                         .requestMatchers("/payment/purchase-ticket/**").permitAll()
                         .requestMatchers("/payment/top-up-balance").authenticated()
