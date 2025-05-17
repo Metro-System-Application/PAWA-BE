@@ -113,16 +113,16 @@ class PaymentController {
                     )
             )
     })
-    @PostMapping("/purchase-ticket/{passengerId}")
+    @PostMapping("/purchase-ticket")
     ResponseEntity<GenericResponseDTO<?>> purchaseTicketForPassengerWithId(
-            @Parameter(description = "Passenger ID of the person purchasing the ticket") @PathVariable String passengerId,
+            @Parameter(description = "Passenger ID of the person purchasing the ticket") @RequestParam String passengerEmail,
             @Valid @RequestBody
             @Parameter(description = "Details of the ticket(s) to be purchased")
-            RequestPurchaseTicketForPassengerDTO requestPurchaseTicketForPassengerDTO) {
+            RequestPurchaseTicketForPassengerByOperatorDTO requestPurchaseTicketForPassengerDTO) {
 
         PurchaseWithEwalletResult result =
-                paymentService.purchaseTicketForPassengerWithIdByOperator(
-                        passengerId,
+                paymentService.purchaseTicketForPassengerWithEmailByOperator(
+                        passengerEmail,
                         requestPurchaseTicketForPassengerDTO
                 );
 

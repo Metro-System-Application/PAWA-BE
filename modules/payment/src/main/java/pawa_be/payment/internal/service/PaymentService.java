@@ -18,16 +18,21 @@ import pawa_be.payment.internal.repository.EWalletRepository;
 import pawa_be.payment.internal.repository.TopUpTransactionRepository;
 import pawa_be.payment.internal.service.result.PurchaseWithEwalletResult;
 import pawa_be.payment.internal.service.result.PurchaseWithEWalletResultType;
+import pawa_be.profile.external.service.IExternalPassengerService;
 import pawa_be.ticket.external.service.IExternalTicketService;
 
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 @Service
 public class PaymentService {
     @Autowired
     IExternalTicketService externalTicketService;
+
+    @Autowired
+    IExternalPassengerService externalPassengerService;
 
     @Autowired
     TopUpTransactionRepository topUpTransactionRepository;
@@ -44,9 +49,14 @@ public class PaymentService {
     @Autowired
     InvoiceService invoiceService;
 
-    public PurchaseWithEwalletResult purchaseTicketForPassengerWithIdByOperator(
-            String passengerId,
-            RequestPurchaseTicketForPassengerDTO requestPurchaseTicketForPassengerDTO) {
+    public PurchaseWithEwalletResult purchaseTicketForPassengerWithEmailByOperator(
+            String passengerEmail,
+            RequestPurchaseTicketForPassengerByOperatorDTO requestPurchaseTicketForPassengerDTO) {
+        String passengerId = externalPassengerService.findPassengerIdByEmail(passengerEmail)
+                .orElseThrow(() -> new NotFoundException(
+                        String.format("Passenger with email '%s' not found", passengerEmail)
+                ));
+
         EwalletModel passengerEwallet = eWalletRepository
                 .findByPassengerModel_PassengerID(passengerId)
                 .orElseThrow(

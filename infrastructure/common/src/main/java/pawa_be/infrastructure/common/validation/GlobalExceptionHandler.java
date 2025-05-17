@@ -99,7 +99,7 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler({ IOException.class })
-    public ResponseEntity<GenericResponseDTO<?>> handleDeadlyExceptions(RuntimeException ex) {
+    public ResponseEntity<GenericResponseDTO<?>> handleDeadlyExceptions(IOException ex) {
         return new ResponseEntity<>(new GenericResponseDTO<>(false, ex.getMessage(), null), HttpStatus.INTERNAL_SERVER_ERROR);
     }
 

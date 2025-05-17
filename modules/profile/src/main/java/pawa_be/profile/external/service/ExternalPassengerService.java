@@ -3,13 +3,13 @@ package pawa_be.profile.external.service;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import pawa_be.profile.external.dto.RequestRegisterPassengerDTO;
-import pawa_be.profile.external.dto.ResponsePassengerDTO;
 import pawa_be.profile.internal.model.PassengerModel;
 import pawa_be.profile.internal.repository.PassengerRepository;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.Period;
+import java.util.Optional;
 
 @Service
 class ExternalPassengerService implements IExternalPassengerService {
@@ -47,6 +47,12 @@ class ExternalPassengerService implements IExternalPassengerService {
 //                passenger.getHasDisability(),
 //                passenger.getIsRevolutionary()
 //        );
+    }
+
+    @Override
+    public Optional<String> findPassengerIdByEmail(String email) {
+        PassengerModel passenger = passengerRepository.findPassengerModelByEmail(email);
+        return passenger != null ? passenger.getPassengerID().describeConstable() : Optional.empty();
     }
 
     @Override
