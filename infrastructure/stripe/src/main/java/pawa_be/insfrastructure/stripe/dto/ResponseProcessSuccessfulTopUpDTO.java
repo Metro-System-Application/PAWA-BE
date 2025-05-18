@@ -13,4 +13,5 @@ public class ResponseProcessSuccessfulTopUpDTO {
     private String transactionId;
     private LineItemCollection lineItems;
     boolean fromCart;
+    boolean isTopUp;
 }

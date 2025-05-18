@@ -205,7 +205,7 @@ public class PaymentService {
             ResponseProcessSuccessfulTopUpDTO dto = stripeService.processSuccessfulTransaction(payload);
 
             List<LineItem> lineItems = dto.getLineItems().getData();
-            if (lineItems.isEmpty()) {
+            if (dto.isTopUp()) {
                 BigDecimal amountInVND = BigDecimal.valueOf(dto.getAmount());
 
                 EwalletModel wallet = eWalletRepository.findByPassengerModel_PassengerID(dto.getUserid())
@@ -279,7 +279,7 @@ public class PaymentService {
             );
         }
 
-        final BigDecimal remainingBalance = balance.subtract(balance);
+        final BigDecimal remainingBalance = balance.subtract(price);
         passengerEwallet.setBalance(remainingBalance);
 
         eWalletRepository.save(passengerEwallet);

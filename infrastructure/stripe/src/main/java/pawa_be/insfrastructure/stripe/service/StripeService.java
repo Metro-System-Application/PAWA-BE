@@ -57,10 +57,14 @@ public class StripeService implements IStripeService {
 
 
     public ResponseCreateStripeSessionDTO createTopUpPaymentSession(RequestPaymentDataDTO userData, long price, RequestRedirectUrlsDTO redirectData) throws StripeException {
+        Map<String, String> metadata = new HashMap<>();
+        metadata.put("top_up", "true");
+
         SessionCreateParams.Builder sessionBuilder = SessionCreateParams.builder()
                 .setMode(SessionCreateParams.Mode.PAYMENT)
                 .setSuccessUrl(redirectData.getSuccessUrl())
                 .setCancelUrl(redirectData.getCancelUrl())
+                .putAllMetadata(metadata)
                 .addLineItem(
                         SessionCreateParams.LineItem.builder()
                                 .setPriceData(
@@ -147,8 +151,11 @@ public class StripeService implements IStripeService {
         String userId = session.getClientReferenceId();
         String userEmail = session.getCustomerEmail();
         Long amount = session.getAmountTotal();
-        boolean fromCart = metadata.get("from-cart").equals("true");
+        String fromCartString = metadata.get("from-cart");
+        String fromTopUpString = metadata.get("top_up");
+        boolean fromCart = fromCartString != null && fromCartString.equals("true");
+        boolean isTopUp = fromTopUpString != null && fromTopUpString.equals("true");
 
-        return new ResponseProcessSuccessfulTopUpDTO(userId, userEmail, amount, paymentIntentId, lineItems, fromCart);
+        return new ResponseProcessSuccessfulTopUpDTO(userId, userEmail, amount, paymentIntentId, lineItems, fromCart, isTopUp);
     }
 }

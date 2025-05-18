@@ -12,8 +12,8 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 public class RequestPayCheckoutWithStripeDTO {
-    @NotBlank
+    @NotBlank(message = "successUrl must not be blank")
     String successUrl;
-    @NotBlank
+    @NotBlank(message = "cancelUrl must not be blank")
     String cancelUrl;
 }

@@ -151,7 +151,7 @@ class PaymentController {
         );
 
         return ResponseEntity
-                .status(HttpStatus.PERMANENT_REDIRECT)
+                .status(HttpStatus.OK)
                 .body(new GenericResponseDTO<>(
                         true,
                         "",
@@ -177,7 +177,7 @@ class PaymentController {
         );
 
         return ResponseEntity
-                .status(HttpStatus.PERMANENT_REDIRECT)
+                .status(HttpStatus.OK)
                 .body(new GenericResponseDTO<>(
                         true,
                         "",
@@ -261,14 +261,14 @@ class PaymentController {
     @PostMapping("/top-up-balance")
     ResponseEntity<GenericResponseDTO<?>> topUpBalance(
             @Parameter(hidden = true) Authentication authentication,
-            @Valid RequestTopUpBalanceDTO topUpBalanceDTO
+            @Valid @RequestBody RequestTopUpBalanceDTO topUpBalanceDTO
             ) throws StripeException {
         String passengerId = getUserIdFromAuthentication(authentication);
         String passengerEmail = getEmailFromAuthentication(authentication);
 
         ResponseCreateStripeSessionDTO response =  paymentService.createTopUpPaymentSession(passengerId, passengerEmail, topUpBalanceDTO.getPrice(), topUpBalanceDTO.getSuccessUrl(), topUpBalanceDTO.getCancelUrl());
         return ResponseEntity
-                .status(HttpStatus.PERMANENT_REDIRECT)
+                .status(HttpStatus.OK)
                 .body(new GenericResponseDTO<>(
                         true,
                         "",
@@ -278,14 +278,14 @@ class PaymentController {
     @PostMapping("/checkout")
     ResponseEntity<GenericResponseDTO<?>> checkout(
             @Parameter(hidden = true) Authentication authentication,
-            @Valid RequestPayCheckoutWithStripeDTO payCheckoutWithStripeDTO
+            @Valid @RequestBody RequestPayCheckoutWithStripeDTO payCheckoutWithStripeDTO
     ) throws StripeException {
         String passengerId = getUserIdFromAuthentication(authentication);
         String passengerEmail = getEmailFromAuthentication(authentication);
 
         ResponseCreateStripeSessionDTO response =  paymentService.createTicketPaymentSessionFromCart(passengerId, passengerEmail, payCheckoutWithStripeDTO.getSuccessUrl(), payCheckoutWithStripeDTO.getCancelUrl());
         return ResponseEntity
-                .status(HttpStatus.PERMANENT_REDIRECT)
+                .status(HttpStatus.OK)
                 .body(new GenericResponseDTO<>(
                         true,
                         "",
@@ -327,7 +327,7 @@ class PaymentController {
             summary = "Get passenger balance",
             description = "Returns the balance for a given passenger ID."
     )
-    @PostMapping("/my-balance")
+    @GetMapping("/my-balance")
     ResponseEntity<GenericResponseDTO<ResponseGetBalanceDTO>> getMyBalance(
             @Parameter(hidden = true) Authentication authentication) {
         String passengerId = getUserIdFromAuthentication(authentication);
