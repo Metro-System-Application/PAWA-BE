@@ -75,14 +75,15 @@ public class SecurityConfig {
                         .requestMatchers("/auth/update-my-info").authenticated()
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
                         .requestMatchers("/profile/**").authenticated()
-                        .requestMatchers("/ticket/*").permitAll()
+                        .requestMatchers("/ticket/best-ticket").hasRole(UserRoleConfig.TICKET_AGENT.getRoleName())
+                        .requestMatchers("/ticket/ticket-types").permitAll()
                         .requestMatchers("/metro-lines/**").permitAll()
                         .requestMatchers("/stations/**").permitAll()
                         .requestMatchers("/schedule/**").permitAll()
                         .requestMatchers("/suspensions/**").permitAll()
                         .requestMatchers("/payment/success", "/payment/direct-ticket/guest").permitAll()
-                        .requestMatchers("/payment/purchase-ticket/**").permitAll()
-                        .requestMatchers("/payment/top-up-balance").authenticated()
+                        .requestMatchers("/payment/purchase-ticket").hasRole(UserRoleConfig.TICKET_AGENT.getRoleName())
+                        .requestMatchers("/invoice/by-email").hasRole(UserRoleConfig.OPERATOR.getRoleName())
                         .requestMatchers("/cart/**").authenticated()
                         .anyRequest().authenticated());
 

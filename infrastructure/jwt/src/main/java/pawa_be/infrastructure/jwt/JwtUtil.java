@@ -1,9 +1,6 @@
 package pawa_be.infrastructure.jwt;
 
-import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.JwtParser;
-import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.SignatureAlgorithm;
+import io.jsonwebtoken.*;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 import pawa_be.infrastructure.jwt.key.KeyStoreManager;
@@ -71,14 +68,14 @@ public class JwtUtil {
 
     public String validateAndExtractGoogleIdFromTempToken(String token) {
         try {
-            Claims claims = extractAllClaims(token);
+            Claims claims = extractAllClaims(token, false);
             String type = (String) claims.get("type");
 
             if (!"temp".equals(type)) {
                 throw new IllegalArgumentException("Token is not a temporary Google token");
             }
 
-            if (isTokenExpired(token)) {
+            if (isTokenExpired(token, false)) {
                 throw new IllegalArgumentException("Temporary token has expired");
             }
 
@@ -88,44 +85,60 @@ public class JwtUtil {
         }
     }
 
-    private JwtParser loadJwtParser() {
+    private JwtParser loadJwtParser(boolean fromOpwa) {
         try {
-            PublicKey publicKey = keyStoreManager.getPublicKey();
+            PublicKey publicKey = fromOpwa
+                    ? KeyStoreManager.getOpwaPublicKey()
+                    : keyStoreManager.getPublicKey();
 
             return Jwts.parser()
                     .verifyWith(publicKey)
                     .build();
-
+        } catch (SecurityException |
+                 ExpiredJwtException |
+                 MalformedJwtException |
+                 UnsupportedJwtException |
+                 IllegalArgumentException e) {
+            throw e;
         } catch (Exception e) {
-            throw new RuntimeException("Error while verifying JWT", e);
+            throw new RuntimeException("Failed to load public key for JWT verification", e);
         }
     }
 
-    private Claims extractAllClaims(String token)  {
-        return loadJwtParser()
+    private Claims extractAllClaims(String token, boolean fromOpwa)  {
+        return loadJwtParser(fromOpwa)
                 .parseSignedClaims(token)
                 .getPayload();
     }
 
-    public <T> T extractClaim(String token, Function<Claims, T> claimsResolver) {
-        final Claims claims = extractAllClaims(token);
+    public <T> T extractClaim(String token, Function<Claims, T> claimsResolver, boolean fromOpwa) {
+        final Claims claims = extractAllClaims(token, fromOpwa);
         return claimsResolver.apply(claims);
     }
 
-    public String extractUsername(String token) {
-        return extractClaim(token, Claims::getSubject);
+    public String extractUsername(String token, boolean fromOpwa) {
+        return extractClaim(token, Claims::getSubject, fromOpwa);
     }
 
-    private Date extractExpiration(String token) {
-        return extractClaim(token, Claims::getExpiration);
+    private Date extractExpiration(String token, boolean fromOpwa) {
+        return extractClaim(token, Claims::getExpiration, fromOpwa);
     }
 
-    private boolean isTokenExpired(String token) {
-        return extractExpiration(token).before(new Date(System.currentTimeMillis()));
+    private boolean isTokenExpired(String token, boolean fromOpwa) {
+        return extractExpiration(token, fromOpwa).before(new Date(System.currentTimeMillis()));
     }
 
-    public boolean verifyJwtSignature(String token) {
-        JwtParser parser = loadJwtParser();
-        return parser.isSigned(token) && !isTokenExpired(token);
+    public boolean verifyJwtSignature(String token, boolean fromOpwa) {
+        JwtParser parser = loadJwtParser(fromOpwa);
+        return parser.isSigned(token) && !isTokenExpired(token, fromOpwa);
+    }
+
+    public String extractOpwaRole(String token) {
+        try {
+            Claims claims = extractAllClaims(token, true);
+            return claims.get("role", String.class);
+        } catch (Exception e) {
+            return null;
+        }
     }
 }

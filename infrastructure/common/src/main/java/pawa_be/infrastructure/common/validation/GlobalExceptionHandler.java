@@ -2,6 +2,9 @@ package pawa_be.infrastructure.common.validation;
 
 import com.fasterxml.jackson.databind.exc.InvalidFormatException;
 import com.stripe.exception.StripeException;
+import io.jsonwebtoken.ExpiredJwtException;
+import io.jsonwebtoken.MalformedJwtException;
+import io.jsonwebtoken.UnsupportedJwtException;
 import jakarta.validation.ConstraintViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -106,5 +109,25 @@ public class GlobalExceptionHandler {
     @ExceptionHandler({ StripeException.class })
     public ResponseEntity<GenericResponseDTO<?>> handleStripeException(StripeException ex) {
         return new ResponseEntity<>(new GenericResponseDTO<>(false, ex.getMessage(), null), HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
+    @ExceptionHandler({ SecurityException.class })
+    public ResponseEntity<GenericResponseDTO<?>> handleJwtInvalidSignatureException(SecurityException ex) {
+        return new ResponseEntity<>(new GenericResponseDTO<>(false, "Invalid token signature", null), HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler({ ExpiredJwtException.class })
+    public ResponseEntity<GenericResponseDTO<?>> handleJwtExpiredException(ExpiredJwtException ex) {
+        return new ResponseEntity<>(new GenericResponseDTO<>(false, "Token expired", null), HttpStatus.UNAUTHORIZED);
+    }
+
+    @ExceptionHandler({ MalformedJwtException.class })
+    public ResponseEntity<GenericResponseDTO<?>> handleJwtMalformedException(MalformedJwtException ex) {
+        return new ResponseEntity<>(new GenericResponseDTO<>(false, "Token malformed", null), HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler({ UnsupportedJwtException.class })
+    public ResponseEntity<GenericResponseDTO<?>> handleJwtUnsupportedException(UnsupportedJwtException ex) {
+        return new ResponseEntity<>(new GenericResponseDTO<>(false, "Token unsupported", null), HttpStatus.BAD_REQUEST);
     }
 }
