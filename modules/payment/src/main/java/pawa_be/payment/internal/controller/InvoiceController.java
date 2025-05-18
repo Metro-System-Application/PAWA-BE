@@ -15,9 +15,11 @@ import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import pawa_be.infrastructure.common.dto.GenericResponseDTO;
 import pawa_be.payment.internal.dto.InvoiceDTO;
+import pawa_be.payment.internal.dto.InvoiceItemDTO;
 import pawa_be.payment.internal.dto.RequestCreateInvoiceDTO;
 import pawa_be.payment.internal.dto.RequestInvoiceByEmailDTO;
 import pawa_be.payment.internal.dto.ResponseCreateInvoiceDTO;
+import pawa_be.payment.internal.enumeration.TicketStatus;
 import pawa_be.payment.internal.service.IInvoiceService;
 
 import java.util.List;
@@ -88,5 +90,31 @@ public class InvoiceController {
                         @Valid @RequestBody RequestInvoiceByEmailDTO requestDTO) {
                 List<InvoiceDTO> invoices = invoiceService.getInvoicesByEmail(requestDTO.getEmail());
                 return ResponseEntity.ok(invoices);
+        }
+
+        @Operation(summary = "Activate a ticket", description = "Activates a ticket by its invoice item ID")
+        @ApiResponses(value = {
+                        @ApiResponse(responseCode = "200", description = "Ticket activation processed", 
+                                content = @Content(schema = @Schema(implementation = GenericResponseDTO.class))),
+                        @ApiResponse(responseCode = "404", description = "Invoice item not found")
+        })
+        @PostMapping("/activate-ticket/{invoiceItemId}")
+        public ResponseEntity<GenericResponseDTO> activateTicket(@PathVariable UUID invoiceItemId) {
+                GenericResponseDTO response = invoiceService.activateTicket(invoiceItemId);
+                return ResponseEntity.ok(response);
+        }
+
+        @Operation(summary = "Get my invoice items by status", description = "Retrieves all invoice items associated with the authenticated user filtered by status")
+        @ApiResponses(value = {
+                        @ApiResponse(responseCode = "200", description = "Invoice items retrieved successfully", 
+                                content = @Content(schema = @Schema(implementation = List.class)))
+        })
+        @GetMapping("/my-tickets/{status}")
+        public ResponseEntity<List<InvoiceItemDTO>> getMyInvoiceItemsByStatus(
+                Authentication authentication,
+                @PathVariable("status") TicketStatus status) {
+                String passengerId = getUserIdFromAuthentication(authentication);
+                List<InvoiceItemDTO> items = invoiceService.getMyInvoiceItemsByStatus(passengerId, status);
+                return ResponseEntity.ok(items);
         }
 }

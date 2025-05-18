@@ -3,6 +3,7 @@ package pawa_be.payment.internal.dto;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import pawa_be.payment.internal.enumeration.TicketStatus;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -14,6 +15,7 @@ import java.util.UUID;
 public class InvoiceItemDTO {
     private UUID invoiceItemID;
     private String ticketType;
+    private TicketStatus status;
     private BigDecimal price;
     private LocalDateTime activatedAt;
     private LocalDateTime expiredAt;
