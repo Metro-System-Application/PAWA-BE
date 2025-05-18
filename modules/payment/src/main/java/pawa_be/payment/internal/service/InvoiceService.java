@@ -1,11 +1,17 @@
 package pawa_be.payment.internal.service;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import pawa_be.infrastructure.common.dto.GenericResponseDTO;
 import pawa_be.infrastructure.common.validation.exceptions.NotFoundException;
 import pawa_be.payment.internal.dto.*;
+import pawa_be.payment.internal.enumeration.InvoiceItemSortField;
 import pawa_be.payment.internal.enumeration.TicketStatus;
 import pawa_be.payment.internal.model.InvoiceItemModel;
 import pawa_be.payment.internal.model.InvoiceModel;
@@ -256,5 +262,68 @@ class InvoiceService implements IInvoiceService {
                         item.getEndStation(),
                         item.getDuration()))
                 .collect(Collectors.toList());
+    }
+
+    public Page<InvoiceItemDTO> getInvoiceItemsPaginated(
+            String passengerId,
+            int page,
+            int size,
+            pawa_be.payment.internal.enumeration.InvoiceItemSortField sortBy,
+            String sortDirection) {
+        
+        // Create pageable object with sorting
+        Sort.Direction direction = sortDirection.equalsIgnoreCase("desc") 
+                ? Sort.Direction.DESC 
+                : Sort.Direction.ASC;
+        
+        Pageable pageable = PageRequest.of(page, size, Sort.by(direction, sortBy.getFieldName()));
+        
+        // Get paginated items
+        Page<InvoiceItemModel> invoiceItemsPage = invoiceItemRepository.findAllByPassengerId(passengerId, pageable);
+        
+        // Update status of all items before returning
+        invoiceItemsPage.getContent().forEach(this::updateTicketStatus);
+        invoiceItemRepository.saveAll(invoiceItemsPage.getContent());
+        
+        // Map to DTOs
+        return invoiceItemsPage.map(item -> new InvoiceItemDTO(
+                item.getInvoiceItemID(),
+                item.getTicketType(),
+                item.getStatus(),
+                item.getPrice(),
+                item.getActivatedAt(),
+                item.getExpiredAt(),
+                item.getLineID(),
+                item.getLineName(),
+                item.getStartStation(),
+                item.getEndStation(),
+                item.getDuration()));
+    }
+
+    public Page<InvoiceItemDTO> getInvoiceItemsByStatusPaginated(
+            String passengerId,
+            TicketStatus status,
+            int page,
+            int size,
+            pawa_be.payment.internal.enumeration.InvoiceItemSortField sortBy,
+            String sortDirection) {
+        
+        // First get all items with pagination
+        Page<InvoiceItemDTO> allItems = getInvoiceItemsPaginated(
+                passengerId, page, size, sortBy, sortDirection);
+        
+        // Then filter by status
+        // Note: This approach loses pagination precision when filtering
+        // A more efficient approach would require a custom repository method
+        List<InvoiceItemDTO> filteredItems = allItems.getContent()
+                .stream()
+                .filter(item -> item.getStatus() == status)
+                .collect(Collectors.toList());
+        
+        // Create a new page with the filtered items
+        return new PageImpl<>(
+                filteredItems,
+                allItems.getPageable(),
+                filteredItems.size());
     }
 }

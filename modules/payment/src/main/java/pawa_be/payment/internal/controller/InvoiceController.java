@@ -9,6 +9,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -19,6 +20,7 @@ import pawa_be.payment.internal.dto.InvoiceItemDTO;
 import pawa_be.payment.internal.dto.RequestCreateInvoiceDTO;
 import pawa_be.payment.internal.dto.RequestInvoiceByEmailDTO;
 import pawa_be.payment.internal.dto.ResponseCreateInvoiceDTO;
+import pawa_be.payment.internal.enumeration.InvoiceItemSortField;
 import pawa_be.payment.internal.enumeration.TicketStatus;
 import pawa_be.payment.internal.service.IInvoiceService;
 
@@ -115,6 +117,47 @@ public class InvoiceController {
                 @PathVariable("status") TicketStatus status) {
                 String passengerId = getUserIdFromAuthentication(authentication);
                 List<InvoiceItemDTO> items = invoiceService.getMyInvoiceItemsByStatus(passengerId, status);
+                return ResponseEntity.ok(items);
+        }
+
+        @Operation(summary = "Get paginated invoice items", 
+                description = "Retrieves all invoice items associated with the authenticated user with pagination and sorting")
+        @ApiResponses(value = {
+                @ApiResponse(responseCode = "200", description = "Invoice items retrieved successfully",
+                        content = @Content(schema = @Schema(implementation = Page.class)))
+        })
+        @GetMapping("/my-tickets")
+        public ResponseEntity<Page<InvoiceItemDTO>> getMyInvoiceItemsPaginated(
+                Authentication authentication,
+                @RequestParam(defaultValue = "0") int page,
+                @RequestParam(defaultValue = "10") int size,
+                @RequestParam(defaultValue = "PURCHASED_AT") InvoiceItemSortField sortBy,
+                @RequestParam(defaultValue = "desc") String sortDirection) {
+                
+                String passengerId = getUserIdFromAuthentication(authentication);
+                Page<InvoiceItemDTO> items = invoiceService.getInvoiceItemsPaginated(
+                        passengerId, page, size, sortBy, sortDirection);
+                return ResponseEntity.ok(items);
+        }
+        
+        @Operation(summary = "Get paginated invoice items by status", 
+                description = "Retrieves invoice items associated with the authenticated user filtered by status with pagination and sorting")
+        @ApiResponses(value = {
+                @ApiResponse(responseCode = "200", description = "Invoice items retrieved successfully",
+                        content = @Content(schema = @Schema(implementation = Page.class)))
+        })
+        @GetMapping("/my-tickets/status/{status}")
+        public ResponseEntity<Page<InvoiceItemDTO>> getMyInvoiceItemsByStatusPaginated(
+                Authentication authentication,
+                @PathVariable TicketStatus status,
+                @RequestParam(defaultValue = "0") int page,
+                @RequestParam(defaultValue = "10") int size,
+                @RequestParam(defaultValue = "PURCHASED_AT") InvoiceItemSortField sortBy,
+                @RequestParam(defaultValue = "desc") String sortDirection) {
+                
+                String passengerId = getUserIdFromAuthentication(authentication);
+                Page<InvoiceItemDTO> items = invoiceService.getInvoiceItemsByStatusPaginated(
+                        passengerId, status, page, size, sortBy, sortDirection);
                 return ResponseEntity.ok(items);
         }
 }
