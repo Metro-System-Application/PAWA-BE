@@ -16,13 +16,13 @@ import java.util.UUID;
 public class InvoiceModel {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
-    private UUID invoiceID;
+    private UUID invoiceId;
 
     @Convert(converter = StripeIdEncryptor.class)
     private String stripeId;
 
     @ManyToOne
-    @JoinColumn(name = "passenger_id", referencedColumnName = "passengerID", updatable = false)
+    @JoinColumn(name = "passenger_id", referencedColumnName = "passengerId", updatable = false)
     private PassengerModel passengerModel;
 
     @Column(nullable = false)

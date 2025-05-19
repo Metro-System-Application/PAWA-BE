@@ -13,8 +13,8 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 public class InvoiceDTO {
-    private UUID invoiceID;
-    private String passengerID;
+    private UUID invoiceId;
+    private String passengerId;
     private String email;
     private BigDecimal totalPrice;
     private LocalDateTime purchasedAt;

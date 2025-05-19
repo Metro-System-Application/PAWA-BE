@@ -15,10 +15,10 @@ import java.util.UUID;
 public class InvoiceItemModel {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
-    private UUID invoiceItemID;
+    private UUID invoiceItemId;
 
     @ManyToOne
-    @JoinColumn(name = "invoice_id", referencedColumnName = "invoiceID", nullable = false, updatable = false)
+    @JoinColumn(name = "invoice_id", referencedColumnName = "invoiceId", nullable = false, updatable = false)
     private InvoiceModel invoiceModel;
 
     @Column(nullable = false)
@@ -34,13 +34,16 @@ public class InvoiceItemModel {
     private LocalDateTime activatedAt;
     private LocalDateTime expiredAt;
 
-    @Column(nullable = false)
-    private String lineID;
+    @Column(name = "line_id", nullable = false)
+    private String lineId;
 
-    @Column(nullable = false)
+    @Column(name = "line_name", nullable = false)
     private String lineName;
 
+    @Column(name = "start_station")
     private String startStation;
+
+    @Column(name = "end_station")
     private String endStation;
 
     @Column(nullable = false)
