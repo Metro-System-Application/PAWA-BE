@@ -25,7 +25,7 @@ public class JwtUtil {
     public String generateToken(CustomUserDetails userDetails) {
         try {
             PrivateKey privateKey = keyStoreManager.getPrivateKey();
-            int TOKEN_VALIDITY = 60; // One day validity
+            int TOKEN_VALIDITY = 60 * 60 * 24;
 
             Map<String, Object> claims = new HashMap<>();
             claims.put("userId", userDetails.getUserId());

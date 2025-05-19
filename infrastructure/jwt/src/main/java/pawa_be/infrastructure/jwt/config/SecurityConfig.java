@@ -69,13 +69,14 @@ public class SecurityConfig {
                 }))
 //                .requiresChannel(channel -> channel.anyRequest().requiresSecure())
                 .authorizeHttpRequests((requests) -> requests
+                        .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
                         .requestMatchers("/auth/register", "/auth/login", "/auth/logout", "/auth/validate-existing-email",
                                 "/auth/google-signup-url", "/auth/google", "/auth/fill-google-profile")
                         .permitAll()
                         .requestMatchers("/auth/update-my-info").authenticated()
-                        .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
+
                         .requestMatchers("/profile/**").authenticated()
-                        .requestMatchers("/ticket/best-ticket").hasRole(UserRoleConfig.TICKET_AGENT.getRoleName())
+                        .requestMatchers("/ticket/best-ticket").permitAll()
                         .requestMatchers("/ticket/ticket-types").permitAll()
                         .requestMatchers("/metro-lines/**").permitAll()
                         .requestMatchers("/stations/**").permitAll()
