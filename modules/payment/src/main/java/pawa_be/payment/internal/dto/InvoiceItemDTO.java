@@ -13,13 +13,13 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 public class InvoiceItemDTO {
-    private UUID invoiceItemID;
+    private UUID invoiceItemId;
     private String ticketType;
     private TicketStatus status;
     private BigDecimal price;
     private LocalDateTime activatedAt;
     private LocalDateTime expiredAt;
-    private String lineID;
+    private String lineId;
     private String lineName;
     private String startStation;
     private String endStation;

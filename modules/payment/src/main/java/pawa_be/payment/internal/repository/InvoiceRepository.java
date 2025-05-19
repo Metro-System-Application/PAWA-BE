@@ -13,7 +13,7 @@ import java.util.UUID;
 public interface InvoiceRepository extends CrudRepository<InvoiceModel, UUID> {
     List<InvoiceModel> findByPassengerModel_PassengerID(String passengerId);
 
-    Optional<InvoiceModel> findByInvoiceID(UUID invoiceId);
+    Optional<InvoiceModel> findByInvoiceId(UUID invoiceId);
 
     List<InvoiceModel> findByEmail(String email);
 }

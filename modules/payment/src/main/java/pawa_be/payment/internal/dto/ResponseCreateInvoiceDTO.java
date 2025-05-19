@@ -10,6 +10,6 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 public class ResponseCreateInvoiceDTO {
-    private UUID invoiceID;
+    private UUID invoiceId;
     private String message;
 }
