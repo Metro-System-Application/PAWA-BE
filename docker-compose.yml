@@ -68,6 +68,7 @@ services:
       DB_USER: pawa_admin
       DB_PASSWORD: 123
       OPWA_URL: http://host.docker.internal:8081
+      MINIO_URL: http://host.docker.internal:9000
     extra_hosts:
       - "host.docker.internal:host-gateway"
 
