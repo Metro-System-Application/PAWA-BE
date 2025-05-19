@@ -60,8 +60,8 @@ public class CartService {
         CartModel cart = cartRepository.findByPassengerModel_PassengerID(passengerId)
                 .orElseGet(() -> createNewCart(passengerId));
 
-        Optional<CartItemModel> optionalCartItem = cartItemRepository.findByCart_CartIDAndType(
-                cart.getCartID(), ticketType);
+        Optional<CartItemModel> optionalCartItem = cartItemRepository.findByCart_CartIDAndTypeAndLineIDAndStartStationIDAndEndStationID(
+                cart.getCartID(), ticketType, request.getLineId(), request.getStartStationId(), request.getEndStationId());
 
         CartItemModel cartItem;
         if (optionalCartItem.isPresent()) {

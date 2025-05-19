@@ -229,7 +229,7 @@ public class PaymentService {
                             metadata.get("ticket_type"),
                             BigDecimal.valueOf(lineItem.getAmountTotal()),
                             lineItem.getQuantity(),
-                            metadata.get("lineId"),
+                            metadata.get("line_id"),
                             metadata.get("line_name"),
                             metadata.get("start_station"),
                             metadata.get("end_station")

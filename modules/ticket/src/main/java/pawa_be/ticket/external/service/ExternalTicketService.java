@@ -6,6 +6,7 @@ import org.springframework.stereotype.Service;
 import pawa_be.infrastructure.common.validation.exceptions.NotFoundException;
 import pawa_be.profile.external.service.IExternalPassengerService;
 import pawa_be.ticket.external.enumerator.TicketType;
+import pawa_be.ticket.internal.model.TicketModel;
 import pawa_be.ticket.internal.repository.TicketTypeRepository;
 
 import java.math.BigDecimal;
@@ -46,5 +47,12 @@ class ExternalTicketService implements IExternalTicketService {
         }
 
         return Pair.of(true, "");
+    }
+
+    public int getTicketDuration(String ticketType) {
+        TicketType mappedTicketType = TicketType.fromString(ticketType);
+        TicketModel ticket = ticketTypeRepository.findByTicketType(mappedTicketType)
+                .orElseThrow(() -> new NotFoundException("Ticket not found"));
+        return (int) ticket.getExpiryInterval().toDays();
     }
 }

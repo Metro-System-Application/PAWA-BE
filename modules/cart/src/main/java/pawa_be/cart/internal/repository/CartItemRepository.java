@@ -16,7 +16,13 @@ import java.util.UUID;
 public interface CartItemRepository extends CrudRepository<CartItemModel, UUID> {
     List<CartItemModel> findByCart(CartModel cart);
     List<CartItemModel> findAllByCart_PassengerModel_PassengerID(String passengerID);
-    Optional<CartItemModel> findByCart_CartIDAndType(UUID cartCartID, TicketModel type);
+    Optional<CartItemModel> findByCart_CartIDAndTypeAndLineIDAndStartStationIDAndEndStationID(
+            UUID cartCartID,
+            TicketModel type,
+            UUID lineID,
+            UUID startStationID,
+            UUID endStationID
+    );;
     Optional<CartItemModel> findByCart_CartIDAndCartItemID(UUID cartID, UUID cartItemID);
     void deleteByCart(CartModel cart);
     void deleteByCartAndCartItemID(CartModel cart, UUID cartItemID);

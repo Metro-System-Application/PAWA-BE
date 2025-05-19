@@ -8,5 +8,16 @@ public enum TicketType {
         THREE_DAY,
         MONTHLY_STUDENT,
         MONTHLY_ADULT,
-        FREE
+        FREE;
+
+        public static TicketType fromString(String str) {
+                if (str == null) {
+                        throw new IllegalArgumentException("TicketType string cannot be null");
+                }
+                try {
+                        return TicketType.valueOf(str.toUpperCase());
+                } catch (IllegalArgumentException e) {
+                        throw new IllegalArgumentException("Invalid TicketType: " + str);
+                }
+        }
 }

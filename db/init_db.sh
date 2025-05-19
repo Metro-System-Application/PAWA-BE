@@ -61,10 +61,10 @@ CREATE TABLE IF NOT EXISTS invoice_item(
   expired_at   TIMESTAMP(6),
   purchased_at TIMESTAMP(6),
   invoice_id   UUID NOT NULL,
-  invoice_itemid UUID PRIMARY KEY,
+  invoice_item_id UUID PRIMARY KEY,
   end_station  VARCHAR(255),
   line_name    VARCHAR(255) NOT NULL,
-  lineid       VARCHAR(255) NOT NULL,
+  line_id       VARCHAR(255) NOT NULL,
   start_station VARCHAR(255),
   ticket_type   VARCHAR(255) NOT NULL,
   status VARCHAR(255) CHECK (status IN ('ACTIVE','INACTIVE','EXPIRED'))
@@ -175,16 +175,16 @@ VALUES
   (:iid2,'00000000-0000-0000-0000-000000000005','hieu.doquy@gmail.com',0)
 ON CONFLICT(invoiceid) DO NOTHING;
 
-INSERT INTO invoice_item(invoice_itemid,invoice_id,ticket_type,status,price,
-  activated_at,expired_at,lineid,line_name,start_station,end_station,duration,purchased_at)
+INSERT INTO invoice_item(invoice_item_id,invoice_id,ticket_type,status,price,
+  activated_at,expired_at,line_id,line_name,start_station,end_station,duration,purchased_at)
 VALUES
   (gen_random_uuid(),:iid2,'FREE','EXPIRED',0,'2024-05-10 08:00','2024-05-11 08:00',
    :line,'Metro Line',:ssta,:esta,1,'2024-05-10 07:00'),
   (gen_random_uuid(),:iid2,'FREE','EXPIRED',0,'2024-05-20 08:00','2024-05-21 08:00',
    :line,'Metro Line',:ssta,:esta,1,'2024-05-20 07:00');
 
-INSERT INTO invoice_item(invoice_itemid,invoice_id,ticket_type,status,price,
-  activated_at,expired_at,lineid,line_name,start_station,end_station,duration,purchased_at)
+INSERT INTO invoice_item(invoice_item_id,invoice_id,ticket_type,status,price,
+  activated_at,expired_at,line_id,line_name,start_station,end_station,duration,purchased_at)
 VALUES
   (gen_random_uuid(),:iid,'DAILY','EXPIRED',40000,'2024-05-10 08:00','2024-05-11 08:00',
    :line,'Metro Line',:ssta,:esta,1,'2024-05-10 07:00'),
