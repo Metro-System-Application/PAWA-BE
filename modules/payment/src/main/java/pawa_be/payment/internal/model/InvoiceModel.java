@@ -16,6 +16,7 @@ import java.util.UUID;
 public class InvoiceModel {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
+    @Column(name = "invoiceid")
     private UUID invoiceId;
 
     @Convert(converter = StripeIdEncryptor.class)

@@ -20,6 +20,7 @@ import pawa_be.payment.internal.repository.InvoiceRepository;
 import pawa_be.profile.internal.model.PassengerModel;
 import pawa_be.profile.internal.repository.PassengerRepository;
 import pawa_be.ticket.external.enumerator.TicketType;
+import pawa_be.ticket.external.service.IExternalTicketService;
 import pawa_be.ticket.internal.model.TicketModel;
 import pawa_be.ticket.internal.repository.TicketTypeRepository;
 
@@ -29,6 +30,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 @Service
 class InvoiceService implements IInvoiceService {
@@ -44,6 +46,9 @@ class InvoiceService implements IInvoiceService {
 
     @Autowired
     private TicketTypeRepository ticketTypeRepository;
+
+    @Autowired
+    private IExternalTicketService externalTicketService;
 
     /**
      * Create a new invoice with its items after payment is successful
@@ -77,19 +82,28 @@ class InvoiceService implements IInvoiceService {
 
         // Create and save invoice items
         List<InvoiceItemModel> invoiceItems = requestCreateInvoiceDTO.getCartItems().stream()
-                .map(cartItem -> {
-                    InvoiceItemModel item = new InvoiceItemModel();
-                    item.setInvoiceModel(savedInvoice);
-                    item.setTicketType(cartItem.getTicketType());
-                    item.setStatus(TicketStatus.INACTIVE);
-                    item.setPrice(cartItem.getPrice());
-                    item.setLineId(cartItem.getLineId());
-                    item.setLineName(cartItem.getLineName());
-                    item.setStartStation(cartItem.getStartStation());
-                    item.setEndStation(cartItem.getEndStation());
-                    item.setDuration(cartItem.getAmount() > 0 ? (int)cartItem.getAmount() : 1);
-                    // activatedAt and expiredAt will be set when the ticket is activated
-                    return item;
+                .flatMap(cartItem -> {
+                    int amount = (int) cartItem.getAmount();
+                    BigDecimal unitPrice = cartItem.getPrice().divide(BigDecimal.valueOf(amount));
+                    return IntStream.range(0, amount).mapToObj(i -> {
+                        InvoiceItemModel item = new InvoiceItemModel();
+                        item.setInvoiceModel(savedInvoice);
+                        item.setTicketType(cartItem.getTicketType());
+                        item.setPrice(unitPrice);
+                        item.setLineId(cartItem.getLineId());
+                        item.setLineName(cartItem.getLineName());
+                        item.setStartStation(cartItem.getStartStation());
+                        item.setEndStation(cartItem.getEndStation());
+                        item.setDuration(externalTicketService.getTicketDuration(cartItem.getTicketType()));
+                        if (item.getTicketType().equals("ONE_WAY_4")
+                                || item.getTicketType().equals("ONE_WAY_8")
+                                || item.getTicketType().equals("ONE_WAY_X")) {
+                            item.setStatus(TicketStatus.ACTIVE);
+                        } else {
+                            item.setStatus(TicketStatus.INACTIVE);
+                        }
+                        return item;
+                    });
                 })
                 .collect(Collectors.toList());
 
