@@ -61,20 +61,22 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .cors(cors -> cors.configurationSource(_ -> {
                     CorsConfiguration config = new CorsConfiguration();
-                    config.setAllowedOrigins(List.of("http://localhost:3000")); // Allow frontend origin
-                    config.setAllowedMethods(List.of("*")); // Allow specific HTTP methods
+                    config.setAllowedOriginPatterns(List.of("http://localhost:3000")); // Use patterns instead of origins
+                    config.setAllowedMethods(List.of("*")); // Allow all methods
                     config.setAllowedHeaders(List.of("*")); // Allow all headers
-                    config.setAllowCredentials(true); // Allow credentials (e.g., cookies)
+                    config.setAllowCredentials(true); // Allow credentials
                     return config;
                 }))
-//                .requiresChannel(channel -> channel.anyRequest().requiresSecure())
-                .authorizeHttpRequests((requests) -> requests
+                .requiresChannel(channel -> channel
+                        .requestMatchers("/api/ws/**").requiresInsecure() // Allow non-secure WebSocket
+                        .anyRequest().requiresSecure())
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers("/api/ws/**").permitAll() // Allow WebSocket connections
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
                         .requestMatchers("/auth/register", "/auth/login", "/auth/logout", "/auth/validate-existing-email",
                                 "/auth/google-signup-url", "/auth/google", "/auth/fill-google-profile")
                         .permitAll()
                         .requestMatchers("/auth/update-my-info").authenticated()
-
                         .requestMatchers("/profile/**").authenticated()
                         .requestMatchers("/ticket/best-ticket").permitAll()
                         .requestMatchers("/ticket/ticket-types").permitAll()
