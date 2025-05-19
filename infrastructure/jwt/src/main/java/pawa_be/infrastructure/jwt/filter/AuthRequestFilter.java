@@ -110,13 +110,16 @@ public class AuthRequestFilter extends OncePerRequestFilter {
         } catch (SecurityException ex) {
             sendErrorResponse(response, HttpServletResponse.SC_BAD_REQUEST, "Invalid token signature", null);
             return;
-        } catch (ExpiredJwtException ex) {
+        } catch (
+    ExpiredJwtException ex) {
             sendErrorResponse(response, HttpServletResponse.SC_UNAUTHORIZED, "Token expired", null);
             return;
-        } catch (MalformedJwtException ex) {
+        } catch (
+    MalformedJwtException ex) {
             sendErrorResponse(response, HttpServletResponse.SC_BAD_REQUEST, "Token malformed", null);
             return;
-        } catch (UnsupportedJwtException ex) {
+        } catch (
+    UnsupportedJwtException ex) {
             sendErrorResponse(response, HttpServletResponse.SC_BAD_REQUEST, "Token unsupported", null);
             return;
         }
