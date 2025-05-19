@@ -16,7 +16,7 @@ import java.util.UUID;
 public interface InvoiceItemRepository extends JpaRepository<InvoiceItemModel, UUID> {
     List<InvoiceItemModel> findByInvoiceModel(InvoiceModel invoiceModel);
 
-    List<InvoiceItemModel> findByInvoiceModel_InvoiceID(UUID invoiceId);
+    List<InvoiceItemModel> findByInvoiceModel_InvoiceId(UUID invoiceId);
     
     @Query("SELECT item FROM InvoiceItemModel item WHERE item.invoiceModel.passengerModel.passengerID = :passengerId")
     Page<InvoiceItemModel> findAllByPassengerId(@Param("passengerId") String passengerId, Pageable pageable);

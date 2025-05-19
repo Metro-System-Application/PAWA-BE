@@ -83,7 +83,7 @@ class InvoiceService implements IInvoiceService {
                     item.setTicketType(cartItem.getTicketType());
                     item.setStatus(TicketStatus.INACTIVE);
                     item.setPrice(cartItem.getPrice());
-                    item.setLineID(cartItem.getLineID());
+                    item.setLineId(cartItem.getLineId());
                     item.setLineName(cartItem.getLineName());
                     item.setStartStation(cartItem.getStartStation());
                     item.setEndStation(cartItem.getEndStation());
@@ -96,7 +96,7 @@ class InvoiceService implements IInvoiceService {
         invoiceItemRepository.saveAll(invoiceItems);
 
         return new ResponseCreateInvoiceDTO(
-                savedInvoice.getInvoiceID(),
+                savedInvoice.getInvoiceId(),
                 "Invoice created successfully");
     }
 
@@ -107,7 +107,7 @@ class InvoiceService implements IInvoiceService {
      * @return Invoice DTO with items
      */
     public InvoiceDTO getInvoiceById(UUID invoiceId) {
-        InvoiceModel invoiceModel = invoiceRepository.findByInvoiceID(invoiceId)
+        InvoiceModel invoiceModel = invoiceRepository.findByInvoiceId(invoiceId)
                 .orElseThrow(() -> new NotFoundException(String.format("Invoice with ID '%s' not found", invoiceId)));
 
         return convertToInvoiceDTO(invoiceModel);
@@ -211,13 +211,13 @@ class InvoiceService implements IInvoiceService {
 
         List<InvoiceItemDTO> itemDTOs = items.stream()
                 .map(item -> new InvoiceItemDTO(
-                        item.getInvoiceItemID(),
+                        item.getInvoiceItemId(),
                         item.getTicketType(),
                         item.getStatus(),
                         item.getPrice(),
                         item.getActivatedAt(),
                         item.getExpiredAt(),
-                        item.getLineID(),
+                        item.getLineId(),
                         item.getLineName(),
                         item.getStartStation(),
                         item.getEndStation(),
@@ -225,7 +225,7 @@ class InvoiceService implements IInvoiceService {
                 .collect(Collectors.toList());
 
         return new InvoiceDTO(
-                invoiceModel.getInvoiceID(),
+                invoiceModel.getInvoiceId(),
                 invoiceModel.getPassengerModel().getPassengerID(),
                 invoiceModel.getEmail(),
                 invoiceModel.getTotalPrice(),
@@ -250,13 +250,13 @@ class InvoiceService implements IInvoiceService {
         return allItems.stream()
                 .filter(item -> item.getStatus() == status)
                 .map(item -> new InvoiceItemDTO(
-                        item.getInvoiceItemID(),
+                        item.getInvoiceItemId(),
                         item.getTicketType(),
                         item.getStatus(),
                         item.getPrice(),
                         item.getActivatedAt(),
                         item.getExpiredAt(),
-                        item.getLineID(),
+                        item.getLineId(),
                         item.getLineName(),
                         item.getStartStation(),
                         item.getEndStation(),
@@ -287,13 +287,13 @@ class InvoiceService implements IInvoiceService {
         
         // Map to DTOs
         return invoiceItemsPage.map(item -> new InvoiceItemDTO(
-                item.getInvoiceItemID(),
+                item.getInvoiceItemId(),
                 item.getTicketType(),
                 item.getStatus(),
                 item.getPrice(),
                 item.getActivatedAt(),
                 item.getExpiredAt(),
-                item.getLineID(),
+                item.getLineId(),
                 item.getLineName(),
                 item.getStartStation(),
                 item.getEndStation(),
@@ -329,13 +329,13 @@ class InvoiceService implements IInvoiceService {
 
     private InvoiceItemDTO convertToInvoiceItemDTO(InvoiceItemModel item) {
         return new InvoiceItemDTO(
-            item.getInvoiceItemID(),
+            item.getInvoiceItemId(),
             item.getTicketType(),
             item.getStatus(),
             item.getPrice(),
             item.getActivatedAt(),
             item.getExpiredAt(),
-            item.getLineID(),
+            item.getLineId(),
             item.getLineName(),
             item.getStartStation(),
             item.getEndStation(),

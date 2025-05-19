@@ -1,7 +1,7 @@
 package pawa_be.payment.internal.enumeration;
 
 public enum InvoiceItemSortField {
-    ID("invoiceItemID"),
+    ID("invoiceItemId"),
     TICKET_TYPE("ticketType"),
     PURCHASED_AT("purchasedAt"),
     ACTIVATED_AT("activatedAt"),

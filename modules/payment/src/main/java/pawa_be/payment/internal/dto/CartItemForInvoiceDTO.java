@@ -27,7 +27,7 @@ public class CartItemForInvoiceDTO {
     private long amount;
 
     @NotNull(message = "Line ID cannot be null")
-    private String lineID;
+    private String lineId;
 
     @NotEmpty(message = "Line name cannot be empty")
     private String lineName;
