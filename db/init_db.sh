@@ -61,14 +61,24 @@ CREATE TABLE IF NOT EXISTS invoice_item(
   expired_at   TIMESTAMP(6),
   purchased_at TIMESTAMP(6),
   invoice_id   UUID NOT NULL,
-  invoice_item_id UUID PRIMARY KEY,
+  invoice_item_id UUID NOT NULL,
   end_station  VARCHAR(255),
   line_name    VARCHAR(255) NOT NULL,
-  line_id       VARCHAR(255) NOT NULL,
+  line_id      VARCHAR(255) NOT NULL,
   start_station VARCHAR(255),
   ticket_type   VARCHAR(255) NOT NULL,
-  status VARCHAR(255) CHECK (status IN ('ACTIVE','INACTIVE','EXPIRED'))
-);
+  status VARCHAR(255) NOT NULL CHECK (status IN ('ACTIVE','INACTIVE','EXPIRED')),
+  PRIMARY KEY (invoice_item_id, status)
+) PARTITION BY LIST (status);
+
+ CREATE TABLE IF NOT EXISTS invoice_item_active PARTITION OF invoice_item
+     FOR VALUES IN ('ACTIVE');
+
+ CREATE TABLE IF NOT EXISTS invoice_item_inactive PARTITION OF invoice_item
+     FOR VALUES IN ('INACTIVE');
+
+ CREATE TABLE IF NOT EXISTS invoice_item_expired PARTITION OF invoice_item
+     FOR VALUES IN ('EXPIRED');
 
 CREATE TABLE IF NOT EXISTS passenger(
   has_disability BOOL NOT NULL,
