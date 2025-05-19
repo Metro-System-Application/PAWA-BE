@@ -17,7 +17,7 @@ public interface IInvoiceService {
     InvoiceDTO getInvoiceById(UUID invoiceId);
     List<InvoiceDTO> getInvoicesByPassengerId(String passengerId);
     List<InvoiceDTO> getInvoicesByEmail(String email);
-    GenericResponseDTO activateTicket(UUID invoiceItemId);
+    GenericResponseDTO<InvoiceItemDTO> activateTicket(UUID invoiceItemId);
     List<InvoiceItemDTO> getMyInvoiceItemsByStatus(String passengerId, TicketStatus status);
     
     Page<InvoiceItemDTO> getInvoiceItemsPaginated(

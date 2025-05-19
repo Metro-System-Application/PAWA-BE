@@ -149,7 +149,7 @@ class InvoiceService implements IInvoiceService {
      * @return GenericResponseDTO with success status and message
      */
     @Transactional
-    public GenericResponseDTO activateTicket(UUID invoiceItemId) {
+    public GenericResponseDTO<InvoiceItemDTO> activateTicket(UUID invoiceItemId) {
         // Find invoice item
         InvoiceItemModel invoiceItem = invoiceItemRepository.findById(invoiceItemId)
                 .orElseThrow(() -> new NotFoundException(String.format("Invoice item with ID '%s' not found", invoiceItemId)));
@@ -160,14 +160,14 @@ class InvoiceService implements IInvoiceService {
         if (invoiceItem.getExpiredAt() != null && now.isAfter(invoiceItem.getExpiredAt())) {
             invoiceItem.setStatus(TicketStatus.EXPIRED);
             invoiceItemRepository.save(invoiceItem);
-            return new GenericResponseDTO<>(false, "Ticket has expired", null);
+            return new GenericResponseDTO<>(false, "Ticket has expired", convertToInvoiceItemDTO(invoiceItem));
         }
 
         // Then check if ticket is already activated but not expired
         if (invoiceItem.getActivatedAt() != null) {
             updateTicketStatus(invoiceItem);
             invoiceItemRepository.save(invoiceItem);
-            return new GenericResponseDTO<>(false, "Ticket has been activated", null);
+            return new GenericResponseDTO<>(false, "Ticket has been activated", convertToInvoiceItemDTO(invoiceItem));
         }
 
         // Get ticket type to determine duration
@@ -187,7 +187,7 @@ class InvoiceService implements IInvoiceService {
         // Save the updated invoice item
         invoiceItemRepository.save(invoiceItem);
         
-        return new GenericResponseDTO<>(true, "Ticket activated successfully", null);
+        return new GenericResponseDTO<>(true, "Ticket activated successfully", convertToInvoiceItemDTO(invoiceItem));
     }
 
     private void updateTicketStatus(InvoiceItemModel invoiceItem) {
@@ -325,5 +325,21 @@ class InvoiceService implements IInvoiceService {
                 filteredItems,
                 allItems.getPageable(),
                 filteredItems.size());
+    }
+
+    private InvoiceItemDTO convertToInvoiceItemDTO(InvoiceItemModel item) {
+        return new InvoiceItemDTO(
+            item.getInvoiceItemID(),
+            item.getTicketType(),
+            item.getStatus(),
+            item.getPrice(),
+            item.getActivatedAt(),
+            item.getExpiredAt(),
+            item.getLineID(),
+            item.getLineName(),
+            item.getStartStation(),
+            item.getEndStation(),
+            item.getDuration()
+        );
     }
 }

@@ -42,7 +42,7 @@ public class ExternalInvoiceService implements IExternalInvoiceService {
     }
     
     @Override
-    public GenericResponseDTO activateTicket(UUID invoiceItemId) {
+    public GenericResponseDTO<InvoiceItemDTO> activateTicket(UUID invoiceItemId) {
         return invoiceService.activateTicket(invoiceItemId);
     }
     
