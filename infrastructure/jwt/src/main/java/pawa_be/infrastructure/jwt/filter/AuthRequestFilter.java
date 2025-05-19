@@ -54,7 +54,7 @@ public class AuthRequestFilter extends OncePerRequestFilter {
         try {
             // Skip authentication for Swagger UI and API docs
             String requestPath = request.getRequestURI();
-            if (requestPath.contains("/swagger-ui/") || requestPath.contains("/v3/api-docs/")) {
+            if (requestPath.contains("/swagger-ui") || requestPath.contains("/v3/api-docs")) {
                 filterChain.doFilter(request, response);
                 return;
             }

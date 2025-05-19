@@ -1,0 +1,10 @@
+target/
+*/target/
+
+.postgres-data
+
+.git/
+*.iml
+.idea/
+
+logs/
