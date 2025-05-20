@@ -84,7 +84,9 @@ class InvoiceService implements IInvoiceService {
         List<InvoiceItemModel> invoiceItems = requestCreateInvoiceDTO.getCartItems().stream()
                 .flatMap(cartItem -> {
                     int amount = (int) cartItem.getAmount();
-                    BigDecimal unitPrice = cartItem.getPrice().divide(BigDecimal.valueOf(amount));
+                    BigDecimal unitPrice = transactionId != null
+                            ? cartItem.getPrice().divide(BigDecimal.valueOf(amount))
+                            : cartItem.getPrice();
                     return IntStream.range(0, amount).mapToObj(i -> {
                         InvoiceItemModel item = new InvoiceItemModel();
                         item.setInvoiceModel(savedInvoice);
