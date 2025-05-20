@@ -21,6 +21,8 @@ import pawa_be.infrastructure.jwt.filter.AuthRequestFilter;
 
 import java.util.List;
 
+import static org.springframework.security.config.Customizer.withDefaults;
+
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity
@@ -59,14 +61,7 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
                 .csrf(AbstractHttpConfigurer::disable)
-                .cors(cors -> cors.configurationSource(_ -> {
-                    CorsConfiguration config = new CorsConfiguration();
-                    config.setAllowedOriginPatterns(List.of("http://localhost:3000")); // Use patterns instead of origins
-                    config.setAllowedMethods(List.of("*")); // Allow all methods
-                    config.setAllowedHeaders(List.of("*")); // Allow all headers
-                    config.setAllowCredentials(true); // Allow credentials
-                    return config;
-                }))
+                .cors(withDefaults())
                 .requiresChannel(channel -> channel
                         .requestMatchers("/api/ws/**").requiresInsecure() // Allow non-secure WebSocket
                         .anyRequest().requiresSecure())
@@ -85,6 +80,7 @@ public class SecurityConfig {
                         .requestMatchers("/schedule/**").permitAll()
                         .requestMatchers("/suspensions/**").permitAll()
                         .requestMatchers("/payment/success", "/payment/direct-ticket/guest").permitAll()
+                        .requestMatchers("/payment/top-up-balance").authenticated()
                         .requestMatchers("/payment/purchase-ticket").hasRole(UserRoleConfig.TICKET_AGENT.getRoleName())
                         .requestMatchers("/invoice/by-email").hasRole(UserRoleConfig.OPERATOR.getRoleName())
                         .requestMatchers("/cart/**").authenticated()

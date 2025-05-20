@@ -151,9 +151,13 @@ SQL
 ##############################################################################
 # 6. Try to fetch Metro-line IDs (won’t abort on failure)
 ##############################################################################
-FIRST_METRO_LINE_ID=$(curl -sf 'http://localhost:8081/api/metro_line' | jq -r '.[0].metroLine.id' || echo 'LINE-DUMMY')
-FIRST_METRO_LINE_FIRST_STATION_ID=$(curl -sf 'http://localhost:8081/api/metro_line' | jq -r '.[0].firstStation.id' || echo 'ST1-DUMMY')
-FIRST_METRO_LINE_LAST_STATION_ID=$(curl -sf 'http://localhost:8081/api/metro_line' | jq -r '.[0].lastStation.id' || echo 'ST2-DUMMY')
+FIRST_METRO_LINE_ID=$(curl -sf http://host.docker.internal:8081/api/metro_line | jq -r '.[0].metroLine.id')
+FIRST_METRO_LINE_FIRST_STATION_ID=$(curl -sf http://host.docker.internal:8081/api/metro_line | jq -r '.[0].firstStation.id')
+FIRST_METRO_LINE_LAST_STATION_ID=$(curl -sf http://host.docker.internal:8081/api/metro_line | jq -r '.[0].lastStation.id')
+
+echo $FIRST_METRO_LINE_FIRST_STATION_ID
+echo $FIRST_METRO_LINE_ID
+echo FIRST_METRO_LINE_LAST_STATION_ID
 
 ##############################################################################
 # 7. Seed invoices & tickets

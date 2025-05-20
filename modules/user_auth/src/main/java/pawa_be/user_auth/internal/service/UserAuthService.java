@@ -24,6 +24,7 @@ import pawa_be.payment.external.service.IExternalPaymentService;
 import pawa_be.profile.external.dto.RequestRegisterPassengerDTO;
 import pawa_be.profile.external.dto.ResponsePassengerDTO;
 import pawa_be.profile.external.service.IExternalPassengerService;
+import pawa_be.profile.internal.dto.ResponseGoogleIdExistsDTO;
 import pawa_be.profile.internal.model.PassengerModel;
 import pawa_be.user_auth.internal.dto.*;
 import pawa_be.user_auth.internal.model.UserAuthModel;
@@ -207,8 +208,40 @@ public class UserAuthService implements IUserAuthService {
         }
     }
 
+    public ResponseGoogleIdExistsDTO isGoogleLinked(String userId) {
+        return new ResponseGoogleIdExistsDTO(
+                userAuthRepository.findByUserIdAndGoogleIdIsNotNull(userId).isPresent()
+        );
+    }
+
+    public void linkGoogleToExistingAccount(String userId, String code) throws IOException {
+        Optional<UserAuthModel> user = userAuthRepository.findByUserIdAndGoogleIdIsNotNull(userId);
+        if (user.isPresent()) {
+            throw new GoogleAccountAlreadyLinkedException("Account already linked to Google.");
+        }
+
+        GoogleIdToken.Payload payload = googleOAuthService.authenticateUser(code, true);
+
+        if (!Boolean.TRUE.equals(payload.getEmailVerified())) {
+            throw new GoogleEmailNotVerifiedException("Email is not verified by Google");
+        }
+
+        String googleId = payload.getSubject();
+
+        Optional<UserAuthModel> alreadyUsed = userAuthRepository.findByGoogleId(googleId);
+        if (alreadyUsed.isPresent()) {
+            throw new GoogleAccountAlreadyLinkedException("This Google account is already linked to another user.");
+        }
+
+        UserAuthModel currentUser = userAuthRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        currentUser.setGoogleId(googleId);
+        userAuthRepository.save(currentUser);
+    }
+
     public ResponseGoogleAuthResultDTO authenticateAndHandleGoogleUser(String code) throws IOException {
-        GoogleIdToken.Payload payload = googleOAuthService.authenticateUser(code);
+        GoogleIdToken.Payload payload = googleOAuthService.authenticateUser(code, false);
 
         if (!Boolean.TRUE.equals(payload.getEmailVerified())) {
             throw new GoogleEmailNotVerifiedException("Email is not verified by Google");
@@ -221,7 +254,7 @@ public class UserAuthService implements IUserAuthService {
         UserAuthModel resolvedUser;
         if (user.isEmpty()) {
             if (existsByEmail(email)) {
-                throw new GoogleAccountAlreadyLinkedException("User with this email already registered regularly.");
+                throw new GoogleAccountAlreadyLinkedException("User with this email already registered or has Google account linked.");
             }
 
             resolvedUser = UserAuthModel.fromGoogleId(email, googleId);
@@ -248,7 +281,7 @@ public class UserAuthService implements IUserAuthService {
         return new ResponseGoogleAuthResultDTO(true, authToken, null, null);
     }
 
-    public String buildGoogleSignUpUrl() {
-        return googleOAuthService.buildLoginUrl();
+    public String buildGoogleSignUpUrl(boolean isLinking) {
+        return googleOAuthService.buildLoginUrl(isLinking);
     }
 }
