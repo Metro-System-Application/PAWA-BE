@@ -14,8 +14,8 @@ public class CorsConfig implements WebMvcConfigurer {
     public void addCorsMappings(CorsRegistry cors) {
         cors.addMapping("/**")
                 .allowedOrigins(PAWAFrontendURL)
-                .allowedMethods("GET", "POST", "PUT", "OPTIONS")
+                .allowedMethods("*")
                 .allowedHeaders("*")
-                .allowCredentials(true).maxAge(15 * 60); // Cookies 15 mins max
+                .allowCredentials(true);
     }
 }

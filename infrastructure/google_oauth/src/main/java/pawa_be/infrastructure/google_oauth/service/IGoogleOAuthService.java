@@ -6,6 +6,6 @@ import java.io.IOException;
 import java.security.GeneralSecurityException;
 
 public interface IGoogleOAuthService {
-    GoogleIdToken.Payload authenticateUser(String authorizationCode) throws IOException;
-    String buildLoginUrl();
+    GoogleIdToken.Payload authenticateUser(String authorizationCode, boolean isLinking) throws IOException;
+    String buildLoginUrl(boolean isLinking);
 }

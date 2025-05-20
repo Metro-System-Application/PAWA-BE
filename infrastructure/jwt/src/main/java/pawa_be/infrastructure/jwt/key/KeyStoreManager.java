@@ -1,14 +1,13 @@
 package pawa_be.infrastructure.jwt.key;
 
 import com.google.gson.Gson;
-import net.minidev.json.JSONArray;
-import net.minidev.json.JSONObject;
+import jakarta.annotation.PostConstruct;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
-import java.io.FileInputStream;
 import java.io.InputStream;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -32,6 +31,9 @@ public class KeyStoreManager {
     private static SecretKey aesKey;
     private static PublicKey opwaPublicKey;
 
+    @Value("${external.metro-api.base-url:http://localhost:8081}")
+    private String metroApiBaseUrl;
+
     public KeyStoreManager(JwtKeyProperties properties) throws Exception {
         this.properties = properties;
         this.keyStore = KeyStore.getInstance("PKCS12");
@@ -45,15 +47,14 @@ public class KeyStoreManager {
         MessageDigest digest = MessageDigest.getInstance("SHA-256");
         byte[] keyBytes = digest.digest(privateKey.getEncoded());
         aesKey = new SecretKeySpec(keyBytes, 0, 16, "AES");
-
-        fetchOpwaPublicKey();
     }
 
+    @PostConstruct
     private void fetchOpwaPublicKey() {
         try {
             HttpClient client = HttpClient.newHttpClient();
             HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create("http://localhost:8081/api/auth/jwtCert"))
+                    .uri(URI.create(metroApiBaseUrl + "/api/auth/jwtCert"))
                     .GET()
                     .build();
 
@@ -73,7 +74,7 @@ public class KeyStoreManager {
                 throw new RuntimeException("Failed to fetch key. HTTP status: " + response.statusCode());
             }
         } catch (Exception e) {
-            throw new RuntimeException("Error fetching opwa public key", e);
+            throw new RuntimeException("Error fetching opwa public key from " + metroApiBaseUrl, e);
         }
     }
 

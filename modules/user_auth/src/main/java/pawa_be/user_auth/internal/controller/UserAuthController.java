@@ -25,13 +25,13 @@ import pawa_be.infrastructure.jwt.config.UserAuthConfig;
 import pawa_be.infrastructure.jwt.user_details.CustomUserDetails;
 import pawa_be.profile.external.dto.RequestRegisterPassengerDTO;
 import pawa_be.profile.external.dto.ResponsePassengerDTO;
+import pawa_be.profile.internal.dto.ResponseGoogleIdExistsDTO;
 import pawa_be.user_auth.internal.dto.*;
 import pawa_be.user_auth.internal.service.IUserAuthService;
 
 import java.io.IOException;
 
-import static pawa_be.infrastructure.jwt.misc.Miscellaneous.buildCookieWithCredentials;
-import static pawa_be.infrastructure.jwt.misc.Miscellaneous.buildTempGoogleCookieWithCredentials;
+import static pawa_be.infrastructure.jwt.misc.Miscellaneous.*;
 
 @Validated
 @RestController
@@ -246,6 +246,16 @@ class UserAuthController {
                 .body(new GenericResponseDTO<>(true, "Data updated successfully", null));
     }
 
+    @GetMapping("/is-google-linked")
+    public ResponseEntity<GenericResponseDTO<ResponseGoogleIdExistsDTO>> isGoogleLinked(
+            Authentication authentication
+    ) {
+        final String passengerId = getUserIdFromAuthentication(authentication);
+
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .body(new GenericResponseDTO<>(true, "", userAuthService.isGoogleLinked(passengerId)));
+    }
 
     @GetMapping("/google-signup-url")
     @Operation(
@@ -258,11 +268,11 @@ class UserAuthController {
             @ApiResponse(responseCode = "500", description = "Internal server error",
                     content = @Content(schema = @Schema(implementation = GenericResponseDTO.class)))
     })
-    ResponseEntity<GenericResponseDTO<?>> getRedirectLoginUrl() {
+    ResponseEntity<GenericResponseDTO<?>> getRedirectLoginUrl(Authentication authentication) {
         return ResponseEntity
                 .status(HttpStatus.OK)
                 .body(new GenericResponseDTO<>(true, "", new ResponseGetRedirectLoginUrlDTO(
-                        userAuthService.buildGoogleSignUpUrl()
+                        userAuthService.buildGoogleSignUpUrl(authentication != null)
                 )));
     }
 
@@ -322,7 +332,20 @@ class UserAuthController {
     public ResponseEntity<GenericResponseDTO<?>> handleGoogleCallback(
             HttpServletRequest request,
             HttpServletResponse response,
-            @RequestParam("code") String code) throws IOException {
+            @RequestParam("code") String code,
+    @RequestParam(value = "state", required = false) String state, Authentication authentication) throws IOException {
+        boolean isLinking = "link".equals(state);
+
+        if (isLinking) {
+            if (authentication == null) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new GenericResponseDTO<>(false, "Authentication is null", null));
+            }
+
+            final String passengerId = getUserIdFromAuthentication(authentication);
+            userAuthService.linkGoogleToExistingAccount(passengerId, code);
+            return ResponseEntity.ok(new GenericResponseDTO<>(true, "Google account linked successfully", null));
+        }
+
         ResponseGoogleAuthResultDTO result = userAuthService.authenticateAndHandleGoogleUser(code);
 
         if (!result.isProfileComplete()) {
