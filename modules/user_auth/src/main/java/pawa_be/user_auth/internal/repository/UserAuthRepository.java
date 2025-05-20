@@ -7,8 +7,9 @@ import pawa_be.user_auth.internal.model.UserAuthModel;
 import java.util.Optional;
 
 @Repository
-public interface UserAuthRepository extends JpaRepository<UserAuthModel, Long> {
+public interface UserAuthRepository extends JpaRepository<UserAuthModel, String> {
     UserAuthModel findByEmail(String email);
     Optional<UserAuthModel> findByGoogleId(String googleId);
+    Optional<UserAuthModel> findByUserIdAndGoogleIdIsNotNull(String userId);
 }
 

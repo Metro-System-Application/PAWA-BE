@@ -24,10 +24,13 @@ public class GoogleOAuthService implements IGoogleOAuthService {
     @Value("${google.oauth.redirect_uri_login}")
     private String redirectLoginUri;
 
+    @Value("${google.oauth.redirect_uri_link}")
+    private String redirectLinkUri;
+
     private static final NetHttpTransport transport = new NetHttpTransport();
     private static final GsonFactory jsonFactory = GsonFactory.getDefaultInstance();
 
-    public GoogleIdToken.Payload authenticateUser(String authorizationCode) throws IOException {
+    public GoogleIdToken.Payload authenticateUser(String authorizationCode, boolean isLinking) throws IOException {
         GoogleTokenResponse tokenResponse = new GoogleAuthorizationCodeTokenRequest(
                 transport,
                 jsonFactory,
@@ -35,7 +38,7 @@ public class GoogleOAuthService implements IGoogleOAuthService {
                 clientId,
                 clientSecret,
                 authorizationCode,
-                redirectLoginUri
+                isLinking ? redirectLinkUri : redirectLoginUri
         ).execute();
 
         String idTokenString = tokenResponse.getIdToken();
@@ -53,8 +56,12 @@ public class GoogleOAuthService implements IGoogleOAuthService {
         return idToken.getPayload();
     }
 
-    public String buildLoginUrl() {
-        String encodedRedirectUri = URLEncoder.encode(redirectLoginUri, StandardCharsets.UTF_8);
+    public String buildLoginUrl(boolean isLinking) {
+        String encodedRedirectUri = isLinking
+                ? URLEncoder.encode(redirectLinkUri, StandardCharsets.UTF_8)
+                : URLEncoder.encode(redirectLoginUri, StandardCharsets.UTF_8);
+
+        String state = isLinking ? "link" : "login";
 
         return "https://accounts.google.com/o/oauth2/v2/auth" +
                 "?client_id=" + clientId +
@@ -62,6 +69,7 @@ public class GoogleOAuthService implements IGoogleOAuthService {
                 "&response_type=code" +
                 "&scope=openid%20email%20profile" +
                 "&access_type=offline" +
-                "&prompt=consent";
+                "&prompt=consent" +
+                "&state=" + state;
     }
 }

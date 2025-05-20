@@ -19,7 +19,6 @@ public class UserAuthModel {
     private String email;
 
     private String password;
-    // TODO: add again when connect the db with OPWA
     @Enumerated(EnumType.STRING)
     private UserRoleConfig role;
 
