@@ -13,8 +13,9 @@ import java.util.UUID;
 @Table(name = "invoice_item")
 @Data
 public class InvoiceItemModel {
-    @EmbeddedId
-    private InvoiceItemKey id;
+    @Id
+    @GeneratedValue(strategy = GenerationType.UUID)
+    private UUID invoiceItemId;
 
     @ManyToOne
     @JoinColumn(name = "invoice_id", referencedColumnName = "invoiceId", nullable = false, updatable = false)
@@ -22,6 +23,10 @@ public class InvoiceItemModel {
 
     @Column(nullable = false)
     private String ticketType;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = true)
+    private TicketStatus status = TicketStatus.INACTIVE;
 
     @Column(nullable = false)
     private BigDecimal price;
@@ -46,20 +51,4 @@ public class InvoiceItemModel {
 
     @CreationTimestamp
     private LocalDateTime purchasedAt;
-
-    public TicketStatus getStatus() {
-        return id.getStatus();
-    }
-
-    public UUID getInvoiceItemId() {
-        return id.getInvoiceItemId();
-    }
-
-    public void setStatus(TicketStatus status) {
-        if (this.id == null) {
-            this.id = new InvoiceItemKey();
-            this.id.setInvoiceItemId(UUID.randomUUID());
-        }
-        this.id.setStatus(status);
-    }
 }
