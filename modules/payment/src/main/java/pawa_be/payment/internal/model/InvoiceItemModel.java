@@ -25,8 +25,8 @@ public class InvoiceItemModel {
     private String ticketType;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = true)
-    private TicketStatus status = TicketStatus.INACTIVE;
+    @Column(nullable = false)
+    private TicketStatus status;
 
     @Column(nullable = false)
     private BigDecimal price;

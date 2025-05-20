@@ -64,7 +64,10 @@ class InvoiceService implements IInvoiceService {
 
         // Calculate total price from cart items
         BigDecimal totalPrice = requestCreateInvoiceDTO.getCartItems().stream()
-                .map(CartItemForInvoiceDTO::getPrice)
+                .map(ticket -> {
+                    BigDecimal curPrice = ticket.getPrice();
+                    return curPrice.multiply(BigDecimal.valueOf(ticket.getAmount()));
+                })
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
         // Create invoice (assuming payment is already successful)
@@ -101,6 +104,7 @@ class InvoiceService implements IInvoiceService {
                                 || item.getTicketType().equals("ONE_WAY_8")
                                 || item.getTicketType().equals("ONE_WAY_X")) {
                             item.setStatus(TicketStatus.ACTIVE);
+                            item.setActivatedAt(LocalDateTime.now());
                         } else {
                             item.setStatus(TicketStatus.INACTIVE);
                         }
@@ -321,26 +325,22 @@ class InvoiceService implements IInvoiceService {
             TicketStatus status,
             int page,
             int size,
-            pawa_be.payment.internal.enumeration.InvoiceItemSortField sortBy,
+            InvoiceItemSortField sortBy,
             String sortDirection) {
-        
-        // First get all items with pagination
-        Page<InvoiceItemDTO> allItems = getInvoiceItemsPaginated(
-                passengerId, page, size, sortBy, sortDirection);
-        
-        // Then filter by status
-        // Note: This approach loses pagination precision when filtering
-        // A more efficient approach would require a custom repository method
-        List<InvoiceItemDTO> filteredItems = allItems.getContent()
-                .stream()
-                .filter(item -> item.getStatus() == status)
-                .collect(Collectors.toList());
-        
-        // Create a new page with the filtered items
-        return new PageImpl<>(
-                filteredItems,
-                allItems.getPageable(),
-                filteredItems.size());
+
+        Sort.Direction direction = sortDirection.equalsIgnoreCase("desc")
+                ? Sort.Direction.DESC
+                : Sort.Direction.ASC;
+
+        Pageable pageable = PageRequest.of(page, size, Sort.by(direction, sortBy.getFieldName()));
+
+        Page<InvoiceItemModel> filteredPage = invoiceItemRepository
+                .findAllByInvoiceModel_PassengerModel_PassengerIDAndStatus(passengerId, status, pageable);
+
+        filteredPage.getContent().forEach(this::updateTicketStatus);
+        invoiceItemRepository.saveAll(filteredPage.getContent());
+
+        return filteredPage.map(this::convertToInvoiceItemDTO);
     }
 
     private InvoiceItemDTO convertToInvoiceItemDTO(InvoiceItemModel item) {

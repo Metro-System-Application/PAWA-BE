@@ -65,7 +65,7 @@ public class AuthRequestFilter extends OncePerRequestFilter {
             final String authHeader = request.getHeader("Authorization");
             boolean fromOpwa = false;
             if (authHeader != null && authHeader.startsWith("Bearer ")) {
-                jwt = authHeader.substring(7); // Remove "Bearer " prefix
+                jwt = authHeader.substring(7);
                 isValidToken = jwtUtil.verifyJwtSignature(jwt, true);
                 fromOpwa = true;
             }
