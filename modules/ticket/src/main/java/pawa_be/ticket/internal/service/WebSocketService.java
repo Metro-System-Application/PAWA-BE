@@ -39,8 +39,11 @@ public class WebSocketService extends TextWebSocketHandler {
     @Autowired
     private SimpMessagingTemplate messagingTemplate;
 
-    @Value("${opwa.websocket.url:ws://localhost:8081/api/ws}")
+    @Value("${opwa.websocket.url}")
     private String opwaWebSocketUrl;
+
+    @Value("${cors.pawa_frontend_url}")
+    private String pawaFrontendUrl;
 
     public WebSocketService() {
         this.webSocketClient = new StandardWebSocketClient();
@@ -114,7 +117,7 @@ public class WebSocketService extends TextWebSocketHandler {
         
         // Check if this is a frontend connection by looking at the origin header
         String origin = session.getHandshakeHeaders().getFirst("Origin");
-        if (origin != null && (origin.contains("localhost:3000") || origin.contains("127.0.0.1:3000"))) {
+        if (origin != null && (origin.contains(pawaFrontendUrl) || origin.contains("127.0.0.1:3000"))) {
             log.info("Frontend session registered");
         } else {
             opwaSession = session;

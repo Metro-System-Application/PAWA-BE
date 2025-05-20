@@ -72,6 +72,7 @@ services:
       OPWA_URL: http://host.docker.internal:8081
       MINIO_URL: http://host.docker.internal:9000
       FRONTEND_URL: http://localhost:3000
+      OPWA_WEBSOCKET_URL: ws://host.docker.internal:8081/api/ws
     extra_hosts:
       - "host.docker.internal:host-gateway"
 
