@@ -51,27 +51,27 @@ services:
       - '.postgres-data:/var/lib/postgresql/data'
       - './db:/docker-entrypoint-initdb.d'
 
-#  spring-app:
-#    build:
-#      context: .
-#      dockerfile: Dockerfile
-#    container_name: spring-app
-#    ports:
-#      - "8443:8443"
-#    depends_on:
-#      - postgres
-#      - minio
-#      - stripe-cli
-#    environment:
-#      SPRING_PROFILES_ACTIVE: dev
-#      DB_URL: jdbc:postgresql://postgres:5432/pawa_be_db
-#      DB_USER: pawa_admin
-#      DB_PASSWORD: 123
-#      OPWA_URL: http://host.docker.internal:8081
-#      MINIO_URL: http://host.docker.internal:9000
-#      FRONTEND_URL: http://localhost:3000
-#    extra_hosts:
-#      - "host.docker.internal:host-gateway"
+  spring-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: spring-app
+    ports:
+      - "8443:8443"
+    depends_on:
+      - postgres
+      - minio
+      - stripe-cli
+    environment:
+      SPRING_PROFILES_ACTIVE: dev
+      DB_URL: jdbc:postgresql://postgres:5432/pawa_be_db
+      DB_USER: pawa_admin
+      DB_PASSWORD: 123
+      OPWA_URL: http://host.docker.internal:8081
+      MINIO_URL: http://host.docker.internal:9000
+      FRONTEND_URL: http://localhost:3000
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
 
 volumes:
   minio-data:
