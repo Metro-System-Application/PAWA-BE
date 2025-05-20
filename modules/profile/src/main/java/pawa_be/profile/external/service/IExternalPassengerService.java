@@ -1,6 +1,7 @@
 package pawa_be.profile.external.service;
 
 import pawa_be.profile.external.dto.RequestRegisterPassengerDTO;
+import pawa_be.profile.external.dto.ResponsePassengerDTO;
 import pawa_be.profile.internal.model.PassengerModel;
 
 import java.util.Optional;
@@ -13,4 +14,5 @@ public interface IExternalPassengerService {
     boolean isRevolutionary(String userId);
     boolean isBelow6orAbove60YearsOld(String userId);
     boolean hasDisabilities(String userId);
+    Optional<ResponsePassengerDTO> getPassengerByEmail(String email);
 }

@@ -3,6 +3,7 @@ package pawa_be.profile.external.service;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import pawa_be.profile.external.dto.RequestRegisterPassengerDTO;
+import pawa_be.profile.external.dto.ResponsePassengerDTO;
 import pawa_be.profile.internal.model.PassengerModel;
 import pawa_be.profile.internal.repository.PassengerRepository;
 
@@ -85,5 +86,25 @@ class ExternalPassengerService implements IExternalPassengerService {
     public boolean hasDisabilities(String userId) {
         PassengerModel passenger = passengerRepository.findPassengerModelByPassengerID(userId);
         return passenger != null && Boolean.TRUE.equals(passenger.getHasDisability());
+    }
+
+    @Override
+    public Optional<ResponsePassengerDTO> getPassengerByEmail(String email) {
+        PassengerModel passenger = passengerRepository.findPassengerModelByEmail(email);
+        if (passenger != null) {
+            return Optional.of(new ResponsePassengerDTO(
+                    passenger.getPassengerFirstName(),
+                    passenger.getPassengerMiddleName(),
+                    passenger.getPassengerLastName(),
+                    passenger.getPassengerPhone(),
+                    passenger.getPassengerAddress(),
+                    passenger.getPassengerDateOfBirth(),
+                    passenger.getNationalID(),
+                    passenger.getStudentID(),
+                    passenger.getHasDisability(),
+                    passenger.getIsRevolutionary()
+            ));
+        }
+        return Optional.empty();
     }
 }

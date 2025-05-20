@@ -24,7 +24,6 @@ import pawa_be.infrastructure.jwt.config.HttpOnlyCookieConfig;
 import pawa_be.infrastructure.jwt.config.UserAuthConfig;
 import pawa_be.infrastructure.jwt.user_details.CustomUserDetails;
 import pawa_be.profile.external.dto.RequestRegisterPassengerDTO;
-import pawa_be.profile.external.dto.ResponsePassengerDTO;
 import pawa_be.profile.internal.dto.ResponseGoogleIdExistsDTO;
 import pawa_be.user_auth.internal.dto.*;
 import pawa_be.user_auth.internal.service.IUserAuthService;

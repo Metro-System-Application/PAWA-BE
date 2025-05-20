@@ -12,8 +12,8 @@ import java.util.stream.Collectors;
 import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import pawa_be.profile.internal.model.PassengerModel;
-import pawa_be.profile.internal.repository.PassengerRepository;
+import pawa_be.profile.external.dto.ResponsePassengerDTO;
+import pawa_be.profile.external.service.IExternalPassengerService;
 import pawa_be.ticket.external.enumerator.TicketType;
 import pawa_be.ticket.external.model.MetroLineResponse;
 import pawa_be.ticket.external.service.MetroLineService;
@@ -22,16 +22,16 @@ import pawa_be.ticket.internal.model.TicketModel;
 import pawa_be.ticket.internal.repository.TicketTypeRepository;
 
 @Service
-public class TicketTypeService {
+class TicketTypeService implements ITicketTypeService {
 
     @Autowired
     private TicketTypeRepository ticketTypeRepository;
 
     @Autowired
-    private PassengerRepository passengerRepository;
+    private MetroLineService metroLineService;
 
     @Autowired
-    private MetroLineService metroLineService;
+    private IExternalPassengerService externalPassengerService;
 
     /**
      * Initializes default ticket types in the database if they don't exist.
@@ -319,13 +319,13 @@ public class TicketTypeService {
         }
         
         // Find passenger directly by email
-        PassengerModel passenger = passengerRepository.findPassengerModelByEmail(email);
+        Optional<ResponsePassengerDTO> passenger = externalPassengerService.getPassengerByEmail(email);
         
-        if (passenger != null) {
+        if (passenger.isPresent()) {
             // A. Eligible users (revolutionary, disabled, or age below 6 or above 60) get FREE ticket
-            boolean isEligibleForFree = Boolean.TRUE.equals(passenger.getIsRevolutionary()) || 
-                                       Boolean.TRUE.equals(passenger.getHasDisability()) ||
-                                       isBelow6orAbove60(passenger.getPassengerDateOfBirth());
+            boolean isEligibleForFree = Boolean.TRUE.equals(passenger.get().getIsRevolutionary()) ||
+                                       Boolean.TRUE.equals(passenger.get().getHasDisability()) ||
+                                       isBelow6orAbove60(passenger.get().getPassengerDateOfBirth());
             
             if (isEligibleForFree) {
                 // Return only FREE ticket
@@ -338,7 +338,7 @@ public class TicketTypeService {
             }
             
             // B. Student users get student ticket types
-            boolean isStudent = passenger.getStudentID() != null && !passenger.getStudentID().isEmpty();
+            boolean isStudent = passenger.get().getStudentID() != null && !passenger.get().getStudentID().isEmpty();
             if (isStudent) {
                 return getStudentTicketTypes(metroLineId);
             }

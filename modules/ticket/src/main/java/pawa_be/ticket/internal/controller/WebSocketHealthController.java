@@ -5,7 +5,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import pawa_be.ticket.internal.service.WebSocketService;
+import pawa_be.ticket.internal.service.IWebSocketService;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -13,13 +13,8 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/ws/health")
 public class WebSocketHealthController {
-
-    private final WebSocketService webSocketService;
-
     @Autowired
-    public WebSocketHealthController(WebSocketService webSocketService) {
-        this.webSocketService = webSocketService;
-    }
+    private IWebSocketService webSocketService;
 
     @GetMapping
     public ResponseEntity<Map<String, Object>> getHealth() {

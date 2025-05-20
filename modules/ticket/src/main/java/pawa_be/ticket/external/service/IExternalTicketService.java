@@ -9,4 +9,5 @@ public interface IExternalTicketService {
     BigDecimal getTicketPriceByEnum(TicketType ticketType);
     Pair<Boolean, String> checkEligibleTicketType(TicketType ticketType, String passengerId);
     int getTicketDuration(String ticketType);
+
 }

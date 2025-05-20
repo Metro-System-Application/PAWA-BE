@@ -13,7 +13,7 @@ import java.util.stream.Collectors;
  * This service now uses the database-driven approach instead of enum constants
  */
 @Service
-public class TicketService {
+class TicketService implements ITicketService {
 
     @Autowired
     private TicketTypeRepository ticketTypeRepository;

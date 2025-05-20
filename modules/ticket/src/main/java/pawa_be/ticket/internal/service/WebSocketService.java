@@ -23,7 +23,7 @@ import java.util.concurrent.TimeUnit;
 
 @Slf4j
 @Service
-public class WebSocketService extends TextWebSocketHandler {
+class WebSocketService extends TextWebSocketHandler implements IWebSocketService {
 
     private final WebSocketClient webSocketClient;
     private final WebSocketHttpHeaders headers;

@@ -1,11 +1,10 @@
 package pawa_be.cart.internal.repository;
 
-import jakarta.validation.constraints.NotNull;
+
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.stereotype.Repository;
 import pawa_be.cart.internal.model.CartItemModel;
 import pawa_be.cart.internal.model.CartModel;
-import pawa_be.ticket.external.enumerator.TicketType;
 import pawa_be.ticket.internal.model.TicketModel;
 
 import java.util.List;
